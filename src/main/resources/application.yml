@@ -1,35 +1,96 @@
 spring:
+  application:
+    name: imjang-api
+
+  # 데이터베이스 설정
   datasource:
     url: jdbc:postgresql://localhost:5432/imjang_db
-    username: marista
+    username:
     password:
     driver-class-name: org.postgresql.Driver
+    
+    # HikariCP 설정 (Connection Pool)
     hikari:
-      maximum-pool-size: 5
-      minimum-idle: 2
-      connection-timeout: 30000
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 300000      # 5분
+      max-lifetime: 1800000     # 30분
+      connection-timeout: 30000 # 30초
+      pool-name: ImjangHikariPool
+
+  # JPA 설정
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     properties:
       hibernate:
+        naming:
+          # @Column 없어도 카멜케이스 → 스네이크케이스 자동 변환
+          physical_naming_strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+        # PostgreSQL 방언
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        # SQL 포맷팅
         format_sql: true
-        default_schema: public
+        # 배치 처리
         jdbc:
-          lob:
-            non_contextual_creation: true
-    show-sql: true
+          batch_size: 20
+          batch_versioned_data: true
+        # 2차 캐시 비활성화 (필요시 활성화)
+        cache:
+          use_second_level_cache: false
+        # 통계 정보 (개발용)
+        generate_statistics: false
+
+    
+    # SQL 로깅 (개발용)
+    show-sql: false
+    
+    # Lazy Loading 시 프록시 초기화 문제 방지
     open-in-view: false
 
-  sql:
-    init:
-      mode: never
+  # 파일 업로드 설정
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 50MB  # 사진 여러 장 업로드 고려
+
+# 서버 설정
 server:
   port: 8080
+  
+  # 압축 설정 (API 응답 크기 최소화)
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+    min-response-size: 1024
 
+  # 에러 응답 설정
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: on_param  # ?trace=true 파라미터로 확인 가능
+    include-exception: false
+
+# 로깅 설정
 logging:
   level:
+    root: INFO
     com.imjang: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG  # SQL 로깅
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # 파라미터 로깅
+
+  # 로그 패턴
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:-%5p} ${PID:- } --- [%t] %-40.40logger{39} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
+
+  # 파일 출력
+  file:
+    name: logs/imjang-api.log
+  logback:
+    rollingpolicy:
+      file-name-pattern: logs/imjang-api-%d{yyyy-MM-dd}.%i.log
+      max-file-size: 10MB
+      max-history: 30
