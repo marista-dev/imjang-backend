@@ -38,6 +38,7 @@ public class ErrorResponse {
     this.trace = trace;
   }
 
+  // ErrorCode로부터 생성
   public static ErrorResponse of(ErrorCode errorCode, String path) {
     return ErrorResponse.builder()
             .code(errorCode.getCode())
@@ -75,9 +76,6 @@ public class ErrorResponse {
     return this;
   }
 
-  /**
-   * 필드 검증 에러 상세 정보
-   */
   @Getter
   @NoArgsConstructor(access = AccessLevel.PROTECTED)
   public static class ValidationError {
