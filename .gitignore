@@ -353,3 +353,6 @@ aws.properties
 # API 키 파일
 **/secrets/
 **/credentials/
+
+CLAUDE.md
+PROJECT_CONTEXT.md
