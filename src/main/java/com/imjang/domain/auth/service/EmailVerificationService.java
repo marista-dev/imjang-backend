@@ -4,8 +4,8 @@ import com.imjang.domain.auth.entity.EmailVerification;
 import com.imjang.domain.auth.repository.EmailVerificationRepository;
 import com.imjang.global.exception.CustomException;
 import com.imjang.global.exception.ErrorCode;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Random;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ public class EmailVerificationService {
 
   private final EmailVerificationRepository emailVerificationRepository;
   private final EmailService emailService;
-  private final Random random = new Random();
+  private final SecureRandom secureRandom = new SecureRandom();
 
   /**
    * 인증코드 생성 및 발송
@@ -96,6 +96,6 @@ public class EmailVerificationService {
   }
 
   private String generateCode() {
-    return String.format("%04d", random.nextInt(10000));
+    return String.format("%04d", secureRandom.nextInt(10000));
   }
 }
