@@ -40,7 +40,7 @@ spring:
           use_second_level_cache: false
         # 통계 정보 (개발용)
         generate_statistics: false
-
+    
     
     # SQL 로깅 (개발용)
     show-sql: false
@@ -48,6 +48,22 @@ spring:
     # Lazy Loading 시 프록시 초기화 문제 방지
     open-in-view: false
 
+  # 이메일 발송
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_USERNAME}
+    password: ${EMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.gmail.com
+  
   # 파일 업로드 설정
   servlet:
     multipart:
@@ -94,3 +110,21 @@ logging:
       file-name-pattern: logs/imjang-api-%d{yyyy-MM-dd}.%i.log
       max-file-size: 10MB
       max-history: 30
+
+
+
+# Swagger/OpenAPI 설정
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: alpha  # 알파벳 순 정렬
+    tags-sorter: alpha
+    display-request-duration: true  # 요청 시간 표시
+    doc-expansion: none  # 기본적으로 접힌 상태
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  show-actuator: true
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
