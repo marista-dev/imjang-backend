@@ -88,6 +88,15 @@ server:
     include-stacktrace: on_param  # ?trace=true 파라미터로 확인 가능
     include-exception: false
 
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        secure: false
+        name: JSESSIONID  # 기본값 사용
+        path: /
+
 # 로깅 설정
 logging:
   level:
