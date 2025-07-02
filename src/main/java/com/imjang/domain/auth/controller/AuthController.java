@@ -1,13 +1,17 @@
 package com.imjang.domain.auth.controller;
 
 import com.imjang.domain.auth.dto.request.EmailVerificationRequest;
+import com.imjang.domain.auth.dto.request.LoginRequest;
 import com.imjang.domain.auth.dto.request.ResendVerificationRequest;
 import com.imjang.domain.auth.dto.request.SignUpRequest;
+import com.imjang.domain.auth.dto.response.LoginResponse;
 import com.imjang.domain.auth.dto.response.SignUpResponse;
 import com.imjang.domain.auth.dto.response.VerificationResponse;
 import com.imjang.domain.auth.service.AuthService;
+import com.imjang.domain.auth.service.LoginService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
   private final AuthService authService;
+  private final LoginService loginService;
 
   /**
    * 회원가입
@@ -58,6 +63,30 @@ public class AuthController {
   @PostMapping("/verifications:resend")
   public ResponseEntity<Void> resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
     authService.resendVerification(request);
+    return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * 로그인
+   * POST /api/v1/auth/login
+   */
+  @Operation(summary = "로그인", description = "이메일과 비밀번호로 로그인합니다.")
+  @PostMapping("/login")
+  public ResponseEntity<LoginResponse> login(
+          @Valid @RequestBody LoginRequest request,
+          HttpSession session) {
+    LoginResponse response = loginService.login(request, session);
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * 로그아웃
+   * POST /api/v1/auth/logout
+   */
+  @Operation(summary = "로그아웃", description = "현재 세션을 종료합니다.")
+  @PostMapping("/logout")
+  public ResponseEntity<Void> logout(HttpSession session) {
+    loginService.logout(session);
     return ResponseEntity.noContent().build();
   }
 }
