@@ -61,6 +61,7 @@ public class AuthService {
   /**
    * 인증코드 재발송
    */
+  @Transactional
   public void resendVerification(ResendVerificationRequest request) {
     // 사용자 존재 확인
     userRepository.findByEmail(request.email())
