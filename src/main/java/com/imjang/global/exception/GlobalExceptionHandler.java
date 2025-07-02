@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
 
     log.error("CustomException: {}", e.getMessage(), e);
 
-    ErrorResponse response = ErrorResponse.of(e.getErrorCode(), request.getRequestURI());
+    ErrorResponse response = ErrorResponse.of(e.getErrorCode(), e.getMessage(), request.getRequestURI());
     return ResponseEntity.status(e.getErrorCode().getHttpStatus()).body(response);
   }
 
