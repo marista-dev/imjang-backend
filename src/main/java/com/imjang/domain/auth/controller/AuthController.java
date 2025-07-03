@@ -9,6 +9,7 @@ import com.imjang.domain.auth.dto.response.SignUpResponse;
 import com.imjang.domain.auth.dto.response.VerificationResponse;
 import com.imjang.domain.auth.service.AuthService;
 import com.imjang.domain.auth.service.LoginService;
+import com.imjang.global.common.response.MessageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
@@ -61,9 +62,9 @@ public class AuthController {
    */
   @Operation(summary = "인증코드 재발송", description = "이메일 인증코드를 재발송합니다.")
   @PostMapping("/verifications:resend")
-  public ResponseEntity<Void> resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
+  public ResponseEntity<MessageResponse> resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
     authService.resendVerification(request);
-    return ResponseEntity.noContent().build();
+    return ResponseEntity.ok(MessageResponse.of("인증 코드가 이메일로 재발송되었습니다."));
   }
 
   /**
