@@ -86,9 +86,9 @@ public class ImageService {
     try {
       // 파일명 생성
       String fileName = generateFileName(file.getOriginalFilename());
-      Path originalPath = createFilePath(fileName);
+      Path originalPath = createFilePath(fileName, userId);
       String thumbnailFileName = createThumbnailFileName(fileName);
-      Path thumbnailPath = createFilePath(thumbnailFileName);
+      Path thumbnailPath = createFilePath(thumbnailFileName, userId);
 
       // 원본 파일 저장
       file.transferTo(originalPath.toFile());
@@ -111,8 +111,8 @@ public class ImageService {
 
       // 웹 접근 가능한 URL 생성
       LocalDate now = LocalDate.now();
-      String webAccessibleUrl = String.format("/images/%d/%02d/%02d/%s",
-              now.getYear(), now.getMonthValue(), now.getDayOfMonth(), thumbnailFileName);
+      String webAccessibleUrl = String.format("/images/user%d/%d/%02d/%s",
+              userId, now.getYear(), now.getMonthValue(), thumbnailFileName);
 
       return ImageUploadResponse.of(tempImage.getId(), webAccessibleUrl);
 
@@ -135,17 +135,15 @@ public class ImageService {
     }
 
     String filename = file.getOriginalFilename();
-    if (filename == null || !hasAllowedExtension(filename)) {
+    if (filename == null) {
       throw new CustomException(ErrorCode.INVALID_FILE_TYPE);
     }
-  }
 
-  /**
-   * 파일 확장자 검증
-   */
-  private boolean hasAllowedExtension(String filename) {
+    // 확장자 검증 인라인 처리
     String extension = getFileExtension(filename).toLowerCase();
-    return ALLOWED_EXTENSIONS.contains(extension);
+    if (!ALLOWED_EXTENSIONS.contains(extension)) {
+      throw new CustomException(ErrorCode.INVALID_FILE_TYPE);
+    }
   }
 
   /**
@@ -168,32 +166,28 @@ public class ImageService {
    * 안전한 썸네일 파일명 생성
    */
   private String createThumbnailFileName(String originalFileName) {
-    int lastDotIndex = originalFileName.lastIndexOf(".");
-    if (lastDotIndex == -1) {
-      return "thumb_" + originalFileName + "." + thumbnailFormat;
-    }
-    String baseName = originalFileName.substring(0, lastDotIndex);
+    String extension = getFileExtension(originalFileName);
+    String baseName = extension.isEmpty() ? originalFileName :
+            originalFileName.substring(0, originalFileName.lastIndexOf('.'));
     return "thumb_" + baseName + "." + thumbnailFormat;
   }
 
   /**
-   * 파일 저장 경로 생성
+   * 파일 저장 경로 생성 (사용자별 구분)
    */
-  private Path createFilePath(String filename) throws IOException {
+  private Path createFilePath(String filename, Long userId) throws IOException {
     // 절대 경로 사용
     Path basePath = Paths.get(uploadPath).toAbsolutePath();
 
-    // 날짜별 디렉토리 생성 (예: uploads/2024/01/15/)
+    // 사용자별 + 월별 디렉토리 생성 (예: uploads/user123/2024/01/)
     LocalDate now = LocalDate.now();
-    Path directoryPath = basePath.resolve(
-                    String.valueOf(now.getYear()))
-            .resolve(String.format("%02d", now.getMonthValue()))
-            .resolve(String.format("%02d", now.getDayOfMonth()));
+    Path directoryPath = basePath.resolve("user" + userId)
+            .resolve(String.valueOf(now.getYear()))
+            .resolve(String.format("%02d", now.getMonthValue()));
 
     // 디렉토리가 없으면 생성
     if (!Files.exists(directoryPath)) {
       Files.createDirectories(directoryPath);
-      log.debug("Created directory: {}", directoryPath);
     }
 
     return directoryPath.resolve(filename);
