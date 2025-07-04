@@ -54,12 +54,12 @@ public class Property extends BaseEntity {
   // 가격정보
   private Long deposit;
 
-  @Column(name = "montly_rent")
+  @Column(name = "monthly_rent")
   private Long monthlyRent;
 
   private Long price;
 
-  @Column(name = "maintenace_fee")
+  @Column(name = "maintenance_fee")
   private Long maintenanceFee;
 
   // 매물 정보
