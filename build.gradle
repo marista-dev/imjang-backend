@@ -54,6 +54,9 @@ dependencies {
     // JSON Processing
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
+    // Image Processing
+    implementation 'net.coobird:thumbnailator:0.4.20'
+
     // Test Dependencies
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.mockito:mockito-junit-jupiter'

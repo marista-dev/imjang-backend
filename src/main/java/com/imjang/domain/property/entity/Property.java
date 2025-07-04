@@ -1,0 +1,98 @@
+package com.imjang.domain.property.entity;
+
+import com.imjang.domain.auth.entity.User;
+import com.imjang.global.common.entity.BaseEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(
+        name = "properties",
+        indexes = {
+                @Index(name = "idx_user_created", columnList = "user_id, created_at DESC"),
+                @Index(name = "idx_location", columnList = "latitude, longitude")
+        }
+)
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+public class Property extends BaseEntity {
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
+
+  // 위치정보
+  @Column(nullable = false)
+  private String address;
+
+  @Column(nullable = false, precision = 10, scale = 7)
+  private BigDecimal latitude;
+
+  @Column(nullable = false, precision = 10, scale = 7)
+  private BigDecimal longitude;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "price_type", nullable = false, length = 20)
+  private PropertyType priceType;
+
+  // 가격정보
+  private Long deposit;
+
+  @Column(name = "montly_rent")
+  private Long monthlyRent;
+
+  private Long price;
+
+  @Column(name = "maintenace_fee")
+  private Long maintenanceFee;
+
+  // 매물 정보
+  @Column(nullable = false)
+  private Integer area;
+
+  @Column(name = "current_floor", nullable = false)
+  private Integer currentFloor;
+
+  @Column(name = "total_floor", nullable = false)
+  private Integer totalFloor;
+
+  // 사용자 평가 정보
+  @Column(nullable = false)
+  private Integer rating;
+
+  @Column(name = "move_in_available", nullable = false)
+  private boolean moveInAvailable;
+
+  @Column(name = "revisit_intention", nullable = false)
+  private boolean revisitIntention;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "price_evaluation", nullable = false, length = 20)
+  private PriceEvaluation priceEvaluation;
+
+  @Column(columnDefinition = "TEXT")
+  private String memo;
+
+  @Column(name = "deleted_at")
+  private LocalDateTime deletedAt;
+
+  public void softDelete() {
+    this.deletedAt = LocalDateTime.now();
+  }
+}

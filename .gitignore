@@ -356,6 +356,7 @@ aws.properties
 
 CLAUDE.md
 PROJECT_CONTEXT.md
+uploads
 
 ### Gradle ###
 .gradle
@@ -385,3 +386,4 @@ gradle-app.setting
 *.hprof
 
 # End of https://www.toptal.com/developers/gitignore/api/gradle
+
