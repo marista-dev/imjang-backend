@@ -9,12 +9,12 @@ import jakarta.validation.constraints.NotBlank;
  */
 @Schema(description = "로그인 요청 DTO")
 public record LoginRequest(
-        @Schema(description = "이메일", example = "user@example.com")
+        @Schema(description = "이메일", example = "sa21788@naver.com")
         @NotBlank(message = "이메일은 필수 입력값입니다.")
         @Email(message = "올바른 이메일 형식이 아닙니다.")
         String email,
 
-        @Schema(description = "비밀번호", example = "password")
+        @Schema(description = "비밀번호", example = "Password123!")
         @NotBlank(message = "비밀번호는 필수 입력값입니다.")
         String password
 ) {

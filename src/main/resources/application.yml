@@ -105,7 +105,6 @@ logging:
     org.springframework.web: INFO
     org.hibernate.SQL: DEBUG  # SQL 로깅
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # 파라미터 로깅
-
   # 로그 패턴
   pattern:
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
@@ -119,8 +118,6 @@ logging:
       file-name-pattern: logs/imjang-api-%d{yyyy-MM-dd}.%i.log
       max-file-size: 10MB
       max-history: 30
-
-
 
 # Swagger/OpenAPI 설정
 springdoc:
@@ -137,3 +134,13 @@ springdoc:
   show-actuator: true
   default-produces-media-type: application/json
   default-consumes-media-type: application/json
+
+# 애플리케이션 설정
+app:
+  upload:
+    path: /Users/marista/Desktop/REPO/imjang-backend/uploads/
+    max-size: 10485760  # 10MB in bytes
+  thumbnail:
+    width: 300
+    height: 300
+    format: png
