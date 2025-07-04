@@ -32,11 +32,11 @@ public enum ErrorCode {
   INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A003", "유효하지 않은 토큰입니다"),
   ACCESS_DENIED(HttpStatus.FORBIDDEN, "A004", "권한이 없습니다"),
 
-  // File
+  // File & Image
   FILE_UPLOAD_FAILED(HttpStatus.BAD_REQUEST, "F001", "파일 업로드에 실패했습니다"),
   INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "F002", "지원하지 않는 파일 형식입니다"),
-  FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "F003", "파일 크기가 너무 큽니다"),
-
+  FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "F003", "파일 크기가 10MB를 초과합니다"),
+  EMPTY_FILE(HttpStatus.BAD_REQUEST, "F004", "파일이 비어있습니다"),
   // Database
   DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "D001", "데이터 무결성 위반입니다"),
   CONSTRAINT_VIOLATION(HttpStatus.CONFLICT, "D002", "제약 조건 위반입니다");
@@ -44,5 +44,5 @@ public enum ErrorCode {
   private final HttpStatus httpStatus;
   private final String code;
   private final String message;
-  
+
 }
