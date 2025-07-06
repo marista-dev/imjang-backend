@@ -23,4 +23,15 @@ public class AsyncConfig {
     executor.initialize();
     return executor;
   }
+
+  @Bean(name = "imageUploadExecutor")
+  public Executor imageUploadExecutor() {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    executor.setCorePoolSize(3);
+    executor.setMaxPoolSize(10);
+    executor.setQueueCapacity(50);
+    executor.setThreadNamePrefix("S3Upload-");
+    executor.initialize();
+    return executor;
+  }
 }

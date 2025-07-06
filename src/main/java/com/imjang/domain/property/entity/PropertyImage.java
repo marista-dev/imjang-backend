@@ -3,6 +3,8 @@ package com.imjang.domain.property.entity;
 import com.imjang.global.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -18,7 +20,8 @@ import lombok.NoArgsConstructor;
 @Table(
         name = "property_images",
         indexes = {
-                @Index(name = "idx_property_id", columnList = "property_id")
+                @Index(name = "idx_property_id", columnList = "property_id"),
+                @Index(name = "idx_status", columnList = "status")
         }
 )
 @Getter
@@ -43,4 +46,25 @@ public class PropertyImage extends BaseEntity {
   @Column(name = "display_order", nullable = false)
   @Builder.Default
   private Integer displayOrder = 0;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "status", nullable = false, length = 20)
+  @Builder.Default
+  private ImageUploadStatus status = ImageUploadStatus.PENDING;
+
+  /**
+   * S3 업로드 완료 후 URL 업데이트
+   */
+  public void updateUrls(String imageUrl, String thumbnailUrl) {
+    this.imageUrl = imageUrl;
+    this.thumbnailUrl = thumbnailUrl;
+    this.status = ImageUploadStatus.COMPLETED;
+  }
+
+  /**
+   * 상태 변경
+   */
+  public void updateStatus(ImageUploadStatus status) {
+    this.status = status;
+  }
 }
