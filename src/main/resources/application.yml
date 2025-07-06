@@ -144,3 +144,18 @@ app:
     width: 300
     height: 300
     format: png
+
+# S3 설정
+cloud:
+  aws:
+    credentials:
+      access-key: ${AWS_ACCESS_KEY_ID}
+      secret-key: ${AWS_SECRET_ACCESS_KEY}
+    s3:
+      bucket: imjang-images-2025
+      region: ap-northeast-2
+      endpoint: https://s3.ap-northeast-2.amazonaws.com
+    region:
+      static: ap-northeast-2
+    stack:
+      auto: false
