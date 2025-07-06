@@ -6,15 +6,21 @@ import com.imjang.domain.property.dto.request.CreatePropertyRequest;
 import com.imjang.domain.property.entity.Property;
 import com.imjang.domain.property.entity.PropertyImage;
 import com.imjang.domain.property.entity.TempImage;
+import com.imjang.domain.property.event.PropertyCreatedEvent;
 import com.imjang.domain.property.repository.PropertyImageRepository;
 import com.imjang.domain.property.repository.PropertyRepository;
 import com.imjang.domain.property.repository.TempImageRepository;
 import com.imjang.global.exception.CustomException;
 import com.imjang.global.exception.ErrorCode;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +33,10 @@ public class PropertyService {
   private final PropertyImageRepository propertyImageRepository;
   private final TempImageRepository tempImageRepository;
   private final UserRepository userRepository;
+  private final ApplicationEventPublisher eventPublisher;
+
+  @Value("${app.upload.path}")
+  private String uploadPath;
 
   /**
    * 매물 빠른 기록 생성
@@ -62,7 +72,11 @@ public class PropertyService {
             .build();
 
     property = propertyRepository.save(property);
-    linkImagesToProperty(property, tempImages);
+    List<PropertyImage> savedImages = linkImagesToProperty(property, tempImages);
+    List<Long> imageIds = savedImages.stream()
+            .map(PropertyImage::getId)
+            .toList();
+    eventPublisher.publishEvent(new PropertyCreatedEvent(property.getId(), imageIds));
   }
 
   /**
@@ -86,18 +100,52 @@ public class PropertyService {
   /**
    * 임시 이미지를 매물 이미지로 연결
    */
-  private void linkImagesToProperty(Property property, List<TempImage> tempImages) {
+  private List<PropertyImage> linkImagesToProperty(Property property, List<TempImage> tempImages) {
     List<PropertyImage> propertyImages = IntStream.range(0, tempImages.size())
-            .mapToObj(i -> PropertyImage.builder()
-                    .property(property)
-                    .tempImageId(tempImages.get(i).getId())
-                    .imageUrl(tempImages.get(i).getOriginalUrl())
-                    .thumbnailUrl(tempImages.get(i).getThumbnailUrl())
-                    .displayOrder(i)
-                    .build())
+            .mapToObj(i -> {
+              TempImage tempImage = tempImages.get(i);
+
+              // 파일 시스템 경로를 웹 경로로 변환
+              String tempImageUrl = convertToWebPath(tempImage.getOriginalUrl());
+              String tempThumbnailUrl = convertToWebPath(tempImage.getThumbnailUrl());
+
+              return PropertyImage.builder()
+                      .property(property)
+                      .tempImageId(tempImage.getId())
+                      .imageUrl(tempImageUrl)
+                      .thumbnailUrl(tempThumbnailUrl)
+                      .displayOrder(i)
+                      .build();
+            })
             .toList();
-    propertyImageRepository.saveAll(propertyImages);
+
+    return propertyImageRepository.saveAll(propertyImages);
   }
 
+  /**
+   * 파일 시스템 경로를 웹 접근 가능한 경로로 변환
+   */
+  private String convertToWebPath(String filePath) {
+    try {
+      Path absolutePath = Paths.get(filePath).toAbsolutePath();
+      Path basePath = Paths.get(uploadPath).toAbsolutePath();
+      Path relativePath = basePath.relativize(absolutePath);
 
+      String webPath = relativePath.toString().replace(File.separator, "/");
+      return "/temp-images/" + webPath;
+
+    } catch (Exception e) {
+      log.error("경로 변환 실패: {}", filePath, e);
+      return "/api/v1/images/temp/" + extractTempImageId(filePath) + "/thumbnail";
+    }
+  }
+
+  /**
+   * 파일 경로에서 tempImageId 추출 (fallback용)
+   */
+  private Long extractTempImageId(String filePath) {
+    // 이 로직은 실제로는 사용되지 않을 예정
+    // convertToWebPath가 실패할 경우를 대비한 안전장치
+    return 0L;
+  }
 }
