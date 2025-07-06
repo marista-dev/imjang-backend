@@ -32,7 +32,6 @@ dependencies {
 
     // Database
     runtimeOnly 'org.postgresql:postgresql'
-    testRuntimeOnly 'com.h2database:h2'  // 테스트용 인메모리 DB
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'
@@ -56,6 +55,10 @@ dependencies {
 
     // Image Processing
     implementation 'net.coobird:thumbnailator:0.4.20'
+
+    // AWS SDK
+    implementation platform('software.amazon.awssdk:bom:2.28.29')
+    implementation 'software.amazon.awssdk:s3'
 
     // Test Dependencies
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
