@@ -24,7 +24,8 @@ import lombok.NoArgsConstructor;
         name = "properties",
         indexes = {
                 @Index(name = "idx_user_created", columnList = "user_id, created_at DESC"),
-                @Index(name = "idx_location", columnList = "latitude, longitude")
+                @Index(name = "idx_location", columnList = "latitude, longitude"),
+                @Index(name = "idx_h3_index", columnList = "h3_index")
         }
 )
 @Getter
@@ -46,6 +47,19 @@ public class Property extends BaseEntity {
 
   @Column(nullable = false, precision = 10, scale = 7)
   private BigDecimal longitude;
+
+  // H3 인덱스
+  @Column(name = "h3_index", length = 15)
+  private String h3Index;
+
+  // 위치 정보 조회 상태
+  @Enumerated(EnumType.STRING)
+  @Column(name = "location_fetch_status", length = 20)
+  @Builder.Default
+  private LocationFetchStatus locationFetchStatus = LocationFetchStatus.PENDING;
+
+  @Column(name = "location_fetched_at")
+  private LocalDateTime locationFetchedAt;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "price_type", nullable = false, length = 20)
@@ -94,5 +108,17 @@ public class Property extends BaseEntity {
 
   public void softDelete() {
     this.deletedAt = LocalDateTime.now();
+  }
+
+  // 위치 정보 조회 상태 업데이트
+  public void updateLocationFetchStatus(LocationFetchStatus status) {
+    this.locationFetchStatus = status;
+    if (status == LocationFetchStatus.COMPLETED) {
+      this.locationFetchedAt = LocalDateTime.now();
+    }
+  }
+
+  public void updateH3Index(String h3Index) {
+    this.h3Index = h3Index;
   }
 }
