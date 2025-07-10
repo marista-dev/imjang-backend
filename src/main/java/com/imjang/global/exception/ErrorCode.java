@@ -37,9 +37,15 @@ public enum ErrorCode {
   INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "F002", "지원하지 않는 파일 형식입니다"),
   FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "F003", "파일 크기가 10MB를 초과합니다"),
   EMPTY_FILE(HttpStatus.BAD_REQUEST, "F004", "파일이 비어있습니다"),
+
   // Database
   DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "D001", "데이터 무결성 위반입니다"),
-  CONSTRAINT_VIOLATION(HttpStatus.CONFLICT, "D002", "제약 조건 위반입니다");
+  CONSTRAINT_VIOLATION(HttpStatus.CONFLICT, "D002", "제약 조건 위반입니다"),
+
+  // External API
+  EXTERNAL_API_ERROR(HttpStatus.BAD_GATEWAY, "E001", "외부 API 호출 중 오류가 발생했습니다"),
+  EXTERNAL_API_BAD_REQUEST(HttpStatus.BAD_REQUEST, "E002", "외부 API 요청이 잘못되었습니다"),
+  RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "E003", "API 요청 제한을 초과했습니다");
 
   private final HttpStatus httpStatus;
   private final String code;
