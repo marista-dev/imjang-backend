@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum LocationFetchStatus {
   PENDING("대기중"),
-  IN_PROGRESS("진행중"),
+  PROCESSING("진행중"),
   COMPLETED("완료"),
   FAILED("실패");
 

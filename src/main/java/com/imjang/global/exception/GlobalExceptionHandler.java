@@ -3,7 +3,6 @@ package com.imjang.global.exception;
 
 import com.imjang.global.common.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
