@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: imjang-api-test
+
+  # 테스트용 인메모리 데이터베이스 설정
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+    show-sql: true
+
+  # 이메일 발송 (테스트용 가짜 설정)
+  mail:
+    host: localhost
+    port: 1025
+    username: test
+    password: test
+
+# 서버 설정
+server:
+  port: 0  # 랜덤 포트
+
+# 로깅 설정 (테스트용)
+logging:
+  level:
+    root: WARN
+    com.imjang: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# 애플리케이션 설정
+app:
+  upload:
+    path: ${java.io.tmpdir}/imjang-test/uploads/
+    max-size: 10485760
+  thumbnail:
+    width: 300
+    height: 300
+    format: png
+
+# S3 설정 (테스트용 가짜 설정)
+cloud:
+  aws:
+    credentials:
+      access-key: test-access-key
+      secret-key: test-secret-key
+    s3:
+      bucket: test-bucket
+      region: ap-northeast-2
+      endpoint: https://s3.ap-northeast-2.amazonaws.com
+    region:
+      static: ap-northeast-2
+    stack:
+      auto: false
+
+# 카카오 API 설정 (테스트용)
+kakao:
+  api:
+    key: test-kakao-api-key
+    baseurl: https://dapi.kakao.com

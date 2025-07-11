@@ -11,7 +11,6 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,7 +23,8 @@ import lombok.NoArgsConstructor;
         name = "properties",
         indexes = {
                 @Index(name = "idx_user_created", columnList = "user_id, created_at DESC"),
-                @Index(name = "idx_location", columnList = "latitude, longitude")
+                @Index(name = "idx_location", columnList = "latitude, longitude"),
+                @Index(name = "idx_property_h3", columnList = "h3_index")
         }
 )
 @Getter
@@ -41,11 +41,24 @@ public class Property extends BaseEntity {
   @Column(nullable = false)
   private String address;
 
-  @Column(nullable = false, precision = 10, scale = 7)
-  private BigDecimal latitude;
+  @Column(nullable = false)
+  private Double latitude;
 
-  @Column(nullable = false, precision = 10, scale = 7)
-  private BigDecimal longitude;
+  @Column(nullable = false)
+  private Double longitude;
+
+  // H3 인덱스
+  @Column(name = "h3_index", length = 15)
+  private String h3Index;
+
+  // 위치 정보 조회 상태
+  @Enumerated(EnumType.STRING)
+  @Column(name = "location_fetch_status", length = 20)
+  @Builder.Default
+  private LocationFetchStatus locationFetchStatus = LocationFetchStatus.PENDING;
+
+  @Column(name = "location_fetched_at")
+  private LocalDateTime locationFetchedAt;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "price_type", nullable = false, length = 20)
@@ -94,5 +107,17 @@ public class Property extends BaseEntity {
 
   public void softDelete() {
     this.deletedAt = LocalDateTime.now();
+  }
+
+  // 위치 정보 조회 상태 업데이트
+  public void updateLocationFetchStatus(LocationFetchStatus status) {
+    this.locationFetchStatus = status;
+    if (status == LocationFetchStatus.COMPLETED) {
+      this.locationFetchedAt = LocalDateTime.now();
+    }
+  }
+
+  public void updateH3Index(String h3Index) {
+    this.h3Index = h3Index;
   }
 }

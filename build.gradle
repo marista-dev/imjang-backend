@@ -60,10 +60,22 @@ dependencies {
     implementation platform('software.amazon.awssdk:bom:2.28.29')
     implementation 'software.amazon.awssdk:s3'
 
+    // H3 Geo-spatial Indexing
+    implementation 'com.uber:h3:4.1.1'
+
+    // HTTP Client for KAKAO API
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    // Resilience4j for Rate Limiting
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+    implementation 'io.github.resilience4j:resilience4j-ratelimiter:2.2.0'
+
     // Test Dependencies
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.mockito:mockito-junit-jupiter'
     testImplementation 'org.assertj:assertj-core'
+    testImplementation 'io.projectreactor:reactor-test'
+    testRuntimeOnly 'com.h2database:h2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // Spring Security Core

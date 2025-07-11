@@ -8,7 +8,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.math.BigDecimal;
 import java.util.List;
 
 @Schema(description = "매물 빠른 기록 요청")
@@ -20,11 +19,11 @@ public record CreatePropertyRequest(
 
         @Schema(description = "위도", example = "37.5012")
         @NotNull(message = "위도는 필수입니다")
-        BigDecimal latitude,
+        Double latitude,
 
         @Schema(description = "경도", example = "127.0396")
         @NotNull(message = "경도는 필수입니다")
-        BigDecimal longitude,
+        Double longitude,
 
         @Schema(description = "평점", example = "4")
         @NotNull(message = "평점은 필수입니다")

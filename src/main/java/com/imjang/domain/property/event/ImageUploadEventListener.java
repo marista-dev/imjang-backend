@@ -5,6 +5,8 @@ import com.imjang.domain.property.entity.PropertyImage;
 import com.imjang.domain.property.entity.TempImage;
 import com.imjang.domain.property.repository.PropertyImageRepository;
 import com.imjang.domain.property.repository.TempImageRepository;
+import com.imjang.global.exception.CustomException;
+import com.imjang.global.exception.ErrorCode;
 import com.imjang.infrastructure.s3.S3Service;
 import java.io.File;
 import java.util.List;
@@ -55,14 +57,14 @@ public class ImageUploadEventListener {
 
       // TempImage에서 실제 파일 경로 가져오기
       TempImage tempImage = tempImageRepository.findById(image.getTempImageId())
-              .orElseThrow(() -> new RuntimeException("TempImage not found: " + image.getTempImageId()));
+              .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND));
 
       // 로컬 파일 찾기
       File originalFile = new File(tempImage.getOriginalUrl());
       File thumbnailFile = new File(tempImage.getThumbnailUrl());
 
       if (!originalFile.exists() || !thumbnailFile.exists()) {
-        throw new RuntimeException("이미지 파일이 존재하지 않습니다");
+        throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
       }
 
       // S3 업로드
@@ -89,6 +91,7 @@ public class ImageUploadEventListener {
       log.error("❌이미지 S3 업로드 실패: imageId={}", image.getId(), e);
       image.updateStatus(ImageUploadStatus.FAILED);
       propertyImageRepository.save(image);
+      throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
     }
   }
 }
