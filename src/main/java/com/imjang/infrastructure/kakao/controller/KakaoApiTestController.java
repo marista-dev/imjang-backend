@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +23,7 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/api/v1/test/kakao")
 @RequiredArgsConstructor
+@Profile({"local", "dev"})  // 개발 환경에서만 활성화
 @Slf4j
 public class KakaoApiTestController {
 
@@ -56,36 +58,7 @@ public class KakaoApiTestController {
             });
   }
 
-  @Operation(summary = "키워드로 장소 검색", description = "지정된 좌표 주변에서 키워드로 장소를 검색합니다.")
-  @GetMapping("/search/keyword")
-  public Mono<Map<String, Object>> searchByKeyword(
-          @Parameter(description = "경도", example = "127.02479803562213") @RequestParam Double lng,
-          @Parameter(description = "위도", example = "37.504585233865086") @RequestParam Double lat,
-          @Parameter(description = "검색 키워드", example = "버스정류장") @RequestParam String query,
-          @Parameter(description = "검색 반경(미터)", example = "500") @RequestParam(defaultValue = "500") Integer radius
-  ) {
-    log.info("키워드 검색 요청 - 좌표: ({}, {}), 키워드: {}, 반경: {}m", lng, lat, query, radius);
-
-    KakaoKeywordSearchRequest request = KakaoKeywordSearchRequest.of(query, lng, lat, radius);
-
-    return kakaoApiClient.searchByKeyword(request)
-            .map(response -> {
-              Map<String, Object> result = new HashMap<>();
-              result.put("총 검색 결과", response.meta().totalCount());
-              result.put("검색된 장소 수", response.documents().size());
-              result.put("장소 목록", response.documents().stream()
-                      .map(doc -> Map.of(
-                              "이름", doc.placeName(),
-                              "카테고리", doc.categoryName(),
-                              "주소", doc.addressName(),
-                              "거리", doc.distance() != null ? doc.distance() + "m" : "거리 정보 없음"
-                      ))
-                      .collect(Collectors.toList()));
-              return result;
-            });
-  }
-
-  @Operation(summary = "주변 편의시설 통합 검색", description = "지정된 좌표 주변의 편의점, 지하철역, 버스정류장을 한번에 검색합니다.")
+  @Operation(summary = "주변 편의시설 통합 검색", description = "지정된 좌표 주변의 편의점, 지하철역, 은행, 병원을 한번에 검색합니다.")
   @GetMapping("/search/nearby")
   public Mono<Map<String, Object>> searchNearbyFacilities(
           @Parameter(description = "경도", example = "127.02479803562213") @RequestParam Double lng,
@@ -103,12 +76,17 @@ public class KakaoApiTestController {
             KakaoCategorySearchRequest.of(KakaoCategoryCode.SUBWAY.getCode(), lng, lat, 1000)
     );
 
-    // 버스정류장 검색 (500m)
-    Mono<KakaoKeywordSearchResponse> busStop = kakaoApiClient.searchByKeyword(
-            KakaoKeywordSearchRequest.of("버스정류장", lng, lat, 500)
+    // 은행 검색 (500m)
+    Mono<KakaoCategorySearchResponse> bank = kakaoApiClient.searchByCategory(
+            KakaoCategorySearchRequest.of(KakaoCategoryCode.BANK.getCode(), lng, lat, 500)
     );
 
-    return Mono.zip(convenienceStore, subway, busStop)
+    // 병원 검색 (500m)
+    Mono<KakaoCategorySearchResponse> hospital = kakaoApiClient.searchByCategory(
+            KakaoCategorySearchRequest.of(KakaoCategoryCode.HOSPITAL.getCode(), lng, lat, 500)
+    );
+
+    return Mono.zip(convenienceStore, subway, bank, hospital)
             .map(tuple -> {
               Map<String, Object> result = new HashMap<>();
 
@@ -132,14 +110,23 @@ public class KakaoApiTestController {
                               )
               ));
 
-              // 버스정류장 정보
-              result.put("버스정류장", Map.of(
+              // 은행 정보
+              result.put("은행", Map.of(
                       "개수", tuple.getT3().documents().size(),
                       "가장 가까운 곳", tuple.getT3().documents().isEmpty() ? "없음" :
                               Map.of(
                                       "이름", tuple.getT3().documents().get(0).placeName(),
-                                      "거리", tuple.getT3().documents().get(0).distance() != null ?
-                                              tuple.getT3().documents().get(0).distance() + "m" : "거리 정보 없음"
+                                      "거리", tuple.getT3().documents().get(0).distance() + "m"
+                              )
+              ));
+
+              // 병원 정보
+              result.put("병원", Map.of(
+                      "개수", tuple.getT4().documents().size(),
+                      "가장 가까운 곳", tuple.getT4().documents().isEmpty() ? "없음" :
+                              Map.of(
+                                      "이름", tuple.getT4().documents().get(0).placeName(),
+                                      "거리", tuple.getT4().documents().get(0).distance() + "m"
                               )
               ));
 
