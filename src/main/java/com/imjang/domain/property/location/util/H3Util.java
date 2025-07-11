@@ -20,7 +20,7 @@ public class H3Util {
   /**
    * 위도, 경도를 H3 인덱스로 변환
    */
-  public String getH3Index(double latitude, double longitude) {
+  public String getH3Index(Double latitude, Double longitude) {
     return h3Core.latLngToCellAddress(latitude, longitude, H3_RESOLUTION);
   }
 

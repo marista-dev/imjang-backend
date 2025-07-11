@@ -13,7 +13,7 @@ public record KakaoCategorySearchRequest(
         String sort                // 정렬 기준 (distance, accuracy)
 ) {
 
-  public static KakaoCategorySearchRequest of(String categoryGroupCode, double lng, double lat, int radius) {
+  public static KakaoCategorySearchRequest of(String categoryGroupCode, Double lng, Double lat, int radius) {
     return KakaoCategorySearchRequest.builder()
             .categoryGroupCode(categoryGroupCode)
             .x(String.valueOf(lng))

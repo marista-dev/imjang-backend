@@ -11,7 +11,6 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -25,7 +24,7 @@ import lombok.NoArgsConstructor;
         indexes = {
                 @Index(name = "idx_user_created", columnList = "user_id, created_at DESC"),
                 @Index(name = "idx_location", columnList = "latitude, longitude"),
-                @Index(name = "idx_h3_index", columnList = "h3_index")
+                @Index(name = "idx_property_h3", columnList = "h3_index")
         }
 )
 @Getter
@@ -42,11 +41,11 @@ public class Property extends BaseEntity {
   @Column(nullable = false)
   private String address;
 
-  @Column(nullable = false, precision = 10, scale = 7)
-  private BigDecimal latitude;
+  @Column(nullable = false)
+  private Double latitude;
 
-  @Column(nullable = false, precision = 10, scale = 7)
-  private BigDecimal longitude;
+  @Column(nullable = false)
+  private Double longitude;
 
   // H3 인덱스
   @Column(name = "h3_index", length = 15)
