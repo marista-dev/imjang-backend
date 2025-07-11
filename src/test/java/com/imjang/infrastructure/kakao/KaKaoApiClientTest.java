@@ -26,8 +26,8 @@ class KaKaoApiClientTest {
   @Autowired
   private KaKaoApiClient kakaoApiClient;
 
-  private static final double TEST_LNG = 127.02479803562213;  // 강남역 좌표
-  private static final double TEST_LAT = 37.504585233865086;
+  private static final Double TEST_LNG = 127.02479803562213;  // 강남역 좌표
+  private static final Double TEST_LAT = 37.504585233865086;
 
   @Test
   @DisplayName("카테고리로 편의점 검색 테스트")
