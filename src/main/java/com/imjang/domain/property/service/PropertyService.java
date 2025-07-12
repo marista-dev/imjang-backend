@@ -62,12 +62,31 @@ public class PropertyService {
 
     try {
       h3Index = h3Util.getH3Index(request.latitude(), request.longitude());
-      locationCache = locationCacheRepository.findByH3Index(h3Index).orElse(null);
-
-      log.info("매물 생성: h3Index={}, locationCached={}", h3Index, locationCache != null);
+      log.debug("H3 인덱스 계산 완료: lat={}, lng={}, h3Index={}",
+              request.latitude(), request.longitude(), h3Index);
+    } catch (IllegalArgumentException | ArithmeticException e) {
+      // 좌표값 오류, H3 계산 오류
+      log.warn("H3 인덱스 계산 실패 (잘못된 좌표값): lat={}, lng={}, error={}",
+              request.latitude(), request.longitude(), e.getMessage());
     } catch (Exception e) {
-      log.warn("H3 인덱스 계산 or 위치 캐시 조회 실패, 기본값 처리: lat={}, lng={}",
+      // 예상치 못한 시스템 오류 - 에러 로그 남기고 재시도 가능하도록 예외 전파
+      log.error("H3 인덱스 계산 중 시스템 오류 발생: lat={}, lng={}",
               request.latitude(), request.longitude(), e);
+      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+    }
+
+    // location_cache 조회 (H3 인덱스가 있는 경우에만)
+    if (h3Index != null) {
+      try {
+        locationCache = locationCacheRepository.findByH3Index(h3Index).orElse(null);
+        log.info("매물 생성: h3Index={}, locationCached={}", h3Index, locationCache != null);
+      } catch (Exception e) {
+        // DB 조회 실패는 시스템 오류이므로 예외 전파
+        log.error("위치 캐시 조회 실패: h3Index={}", h3Index, e);
+        throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+      }
+    } else {
+      log.info("매물 생성: h3Index=null (H3 계산 실패로 인한 기본값), locationCached=false");
     }
 
     // 매물 엔티티 생성
