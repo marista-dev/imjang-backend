@@ -3,10 +3,14 @@ package com.imjang.domain.property.service;
 import com.imjang.domain.auth.entity.User;
 import com.imjang.domain.auth.repository.UserRepository;
 import com.imjang.domain.property.dto.request.CreatePropertyRequest;
+import com.imjang.domain.property.entity.LocationFetchStatus;
 import com.imjang.domain.property.entity.Property;
 import com.imjang.domain.property.entity.PropertyImage;
 import com.imjang.domain.property.entity.TempImage;
 import com.imjang.domain.property.event.PropertyCreatedEvent;
+import com.imjang.domain.property.location.entity.LocationCache;
+import com.imjang.domain.property.location.repository.LocationCacheRepository;
+import com.imjang.domain.property.location.util.H3Util;
 import com.imjang.domain.property.repository.PropertyImageRepository;
 import com.imjang.domain.property.repository.PropertyRepository;
 import com.imjang.domain.property.repository.TempImageRepository;
@@ -34,6 +38,8 @@ public class PropertyService {
   private final TempImageRepository tempImageRepository;
   private final UserRepository userRepository;
   private final ApplicationEventPublisher eventPublisher;
+  private final LocationCacheRepository locationCacheRepository;
+  private final H3Util h3Util;
 
   @Value("${app.upload.path}")
   private String uploadPath;
@@ -50,12 +56,48 @@ public class PropertyService {
     // 이미지 검증
     List<TempImage> tempImages = validateAndGetTempImages(request.imageIds(), userId);
 
+    // H3 인덱스 계산 및 위치 정보 조회
+    String h3Index = null;
+    LocationCache locationCache = null;
+
+    try {
+      h3Index = h3Util.getH3Index(request.latitude(), request.longitude());
+      log.debug("H3 인덱스 계산 완료: lat={}, lng={}, h3Index={}",
+              request.latitude(), request.longitude(), h3Index);
+    } catch (IllegalArgumentException | ArithmeticException e) {
+      // 좌표값 오류, H3 계산 오류
+      log.warn("H3 인덱스 계산 실패 (잘못된 좌표값): lat={}, lng={}, error={}",
+              request.latitude(), request.longitude(), e.getMessage());
+    } catch (Exception e) {
+      // 예상치 못한 시스템 오류 - 에러 로그 남기고 재시도 가능하도록 예외 전파
+      log.error("H3 인덱스 계산 중 시스템 오류 발생: lat={}, lng={}",
+              request.latitude(), request.longitude(), e);
+      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+    }
+
+    // location_cache 조회 (H3 인덱스가 있는 경우에만)
+    if (h3Index != null) {
+      try {
+        locationCache = locationCacheRepository.findByH3Index(h3Index).orElse(null);
+        log.info("매물 생성: h3Index={}, locationCached={}", h3Index, locationCache != null);
+      } catch (Exception e) {
+        // DB 조회 실패는 시스템 오류이므로 예외 전파
+        log.error("위치 캐시 조회 실패: h3Index={}", h3Index, e);
+        throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+      }
+    } else {
+      log.info("매물 생성: h3Index=null (H3 계산 실패로 인한 기본값), locationCached=false");
+    }
+
     // 매물 엔티티 생성
     Property property = Property.builder()
             .user(user)
             .address(request.address())
             .latitude(request.latitude())
             .longitude(request.longitude())
+            .h3Index(h3Index)
+            .locationFetchStatus(locationCache != null ? LocationFetchStatus.COMPLETED : LocationFetchStatus.PENDING)
+            .locationFetchedAt(locationCache != null ? locationCache.getLastFetchedAt() : null)
             .priceType(request.priceType())
             .deposit(request.deposit())
             .monthlyRent(request.monthlyRent())
@@ -145,7 +187,6 @@ public class PropertyService {
    */
   private Long extractTempImageId(String filePath) {
     // 이 로직은 실제로는 사용되지 않을 예정
-    // convertToWebPath가 실패할 경우를 대비한 안전장치
     return 0L;
   }
 }
