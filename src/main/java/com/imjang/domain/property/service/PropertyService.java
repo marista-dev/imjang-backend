@@ -3,6 +3,7 @@ package com.imjang.domain.property.service;
 import com.imjang.domain.auth.entity.User;
 import com.imjang.domain.auth.repository.UserRepository;
 import com.imjang.domain.property.dto.request.CreatePropertyRequest;
+import com.imjang.domain.property.dto.response.AddPropertyImagesResponse;
 import com.imjang.domain.property.entity.LocationFetchStatus;
 import com.imjang.domain.property.entity.Property;
 import com.imjang.domain.property.entity.PropertyImage;
@@ -140,14 +141,60 @@ public class PropertyService {
   }
 
   /**
+   * 매물에 이미지 추가
+   */
+  @Transactional
+  public AddPropertyImagesResponse addImagesToProperty(Long propertyId, List<Long> tempImageIds, Long userId) {
+
+    // 1. Property 소유권 검증
+    Property property = propertyRepository.findById(propertyId)
+            .orElseThrow(() -> new CustomException(ErrorCode.PROPERTY_NOT_FOUND));
+
+    if (!property.getUser().getId().equals(userId)) {
+      throw new CustomException(ErrorCode.ACCESS_DENIED);
+    }
+
+    // 2. TempImage 유효성 검증
+    List<TempImage> tempImages = validateAndGetTempImages(tempImageIds, userId);
+
+    // 3. 현재 최대 displayOrder 조회
+    List<PropertyImage> existingImages = propertyImageRepository.findByPropertyIdOrderByDisplayOrder(propertyId);
+    int nextDisplayOrder = existingImages.isEmpty() ? 0 :
+            existingImages.getLast().getDisplayOrder() + 1;
+
+    // 4. PropertyImage 생성 및 저장
+    List<PropertyImage> propertyImages = createPropertyImages(property, tempImages, nextDisplayOrder);
+
+    List<PropertyImage> savedImages = propertyImageRepository.saveAll(propertyImages);
+
+    // 5. PropertyImageAddedEvent 발행
+    List<Long> imageIds = savedImages.stream()
+            .map(PropertyImage::getId)
+            .toList();
+
+    eventPublisher.publishEvent(new PropertyCreatedEvent(propertyId, imageIds));
+
+    log.info("매물 이미지 추가 완료: propertyId={}, addedCount={}", propertyId, imageIds.size());
+
+    return AddPropertyImagesResponse.of(imageIds);
+  }
+
+  /**
    * 임시 이미지를 매물 이미지로 연결
    */
   private List<PropertyImage> linkImagesToProperty(Property property, List<TempImage> tempImages) {
-    List<PropertyImage> propertyImages = IntStream.range(0, tempImages.size())
+    List<PropertyImage> propertyImages = createPropertyImages(property, tempImages, 0);
+    return propertyImageRepository.saveAll(propertyImages);
+  }
+
+  /**
+   * PropertyImage 엔티티 생성
+   */
+  private List<PropertyImage> createPropertyImages(Property property, List<TempImage> tempImages, int startDisplayOrder) {
+    return IntStream.range(0, tempImages.size())
             .mapToObj(i -> {
               TempImage tempImage = tempImages.get(i);
 
-              // 파일 시스템 경로를 웹 경로로 변환
               String tempImageUrl = convertToWebPath(tempImage.getOriginalUrl());
               String tempThumbnailUrl = convertToWebPath(tempImage.getThumbnailUrl());
 
@@ -156,12 +203,10 @@ public class PropertyService {
                       .tempImageId(tempImage.getId())
                       .imageUrl(tempImageUrl)
                       .thumbnailUrl(tempThumbnailUrl)
-                      .displayOrder(i)
+                      .displayOrder(startDisplayOrder + i)
                       .build();
             })
             .toList();
-
-    return propertyImageRepository.saveAll(propertyImages);
   }
 
   /**
