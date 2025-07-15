@@ -4,7 +4,9 @@ import com.imjang.domain.auth.dto.UserSession;
 import com.imjang.domain.auth.service.LoginService;
 import com.imjang.domain.property.dto.request.CreatePropertyRequest;
 import com.imjang.domain.property.dto.request.PrefetchLocationRequest;
+import com.imjang.domain.property.dto.request.UpdatePropertyDetailRequest;
 import com.imjang.domain.property.dto.response.PropertyDetailResponse;
+import com.imjang.domain.property.dto.response.UpdatePropertyDetailResponse;
 import com.imjang.domain.property.event.LocationPrefetchEvent;
 import com.imjang.domain.property.service.PropertyDetailService;
 import com.imjang.domain.property.service.PropertyService;
@@ -22,6 +24,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -64,7 +67,7 @@ public class PropertyController {
     );
   }
 
-  @Operation(summary = "매물 빠른 기록", description = "임장 중 매물 정보를 빠르게 기록합니다.")
+  @Operation(summary = "매물 빠른 기록", description = "임장 중 매물 정보를 빠르게 기록")
   @PostMapping
   @LoginRequired
   public ResponseEntity<MessageResponse> createProperty(
@@ -82,7 +85,7 @@ public class PropertyController {
   }
 
   @Operation(summary = "매물 상세 조회",
-          description = "매물의 상세 정보를 조회합니다. 위치 정보가 아직 수집되지 않았다면 locationInfo는 null로 반환됩니다.")
+          description = "매물의 상세 정보를 조회 위치 정보가 아직 수집되지 않았다면 locationInfo는 null로 반환")
   @GetMapping("/{propertyId}/detail")
   @LoginRequired
   public ResponseEntity<PropertyDetailResponse> getPropertyDetail(
@@ -99,4 +102,29 @@ public class PropertyController {
 
     return ResponseEntity.ok(response);
   }
+
+  // 기존 메서드들 아래에 추가할 PATCH 엔드포인트
+  @Operation(summary = "매물 상세 정보 수정",
+          description = "매물의 체크리스트 및 추가 정보를 수정. 전달된 필드만 업데이트")
+  @PatchMapping("/{propertyId}/detail")
+  @LoginRequired
+  public ResponseEntity<UpdatePropertyDetailResponse> updatePropertyDetail(
+          @Parameter(description = "매물 ID", required = true, example = "123")
+          @PathVariable Long propertyId,
+          @Valid @RequestBody UpdatePropertyDetailRequest request,
+          HttpSession session) {
+    UserSession userSession = (UserSession) session.getAttribute(LoginService.SESSION_KEY);
+    if (userSession == null) {
+      throw new CustomException(ErrorCode.UNAUTHORIZED);
+    }
+
+    UpdatePropertyDetailResponse response = propertyDetailService.updatePropertyDetail(
+            propertyId,
+            request,
+            userSession.userId()
+    );
+
+    return ResponseEntity.ok(response);
+  }
+
 }

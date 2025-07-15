@@ -1,5 +1,6 @@
 package com.imjang.domain.property.dto.request;
 
+import com.imjang.domain.property.entity.ParkingType;
 import com.imjang.domain.property.entity.PriceEvaluation;
 import com.imjang.domain.property.entity.PropertyType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -74,6 +75,9 @@ public record CreatePropertyRequest(
         @Schema(description = "관리비", example = "150000")
         Long maintenanceFee,
 
+        @Schema(description = "주차 가능 여부", example = "UNKNOWN", defaultValue = "UNKNOWN")
+        ParkingType parkingType,
+
         @Schema(description = "이미지 ID 목록", example = "[1234, 5678]")
         @NotNull(message = "이미지는 최소 1장 이상 필요합니다")
         @Size(min = 1, message = "이미지는 최소 1장 이상 필요합니다")
@@ -85,4 +89,9 @@ public record CreatePropertyRequest(
 
 ) {
 
+  public CreatePropertyRequest {
+    if (parkingType == null) {
+      parkingType = ParkingType.UNKNOWN;
+    }
+  }
 }
