@@ -1,9 +1,12 @@
 package com.imjang.domain.property.dto.response;
 
+import com.imjang.domain.property.entity.EnvironmentType;
+import com.imjang.domain.property.entity.ParkingType;
 import com.imjang.domain.property.entity.PropertyType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 
 @Schema(description = "매물 상세 정보 응답")
@@ -50,6 +53,12 @@ public record PropertyDetailResponse(
         @Schema(description = "평가 정보")
         EvaluationInfo evaluation,
 
+        @Schema(description = "주차 가능 여부", example = "AVAILABLE")
+        ParkingType parkingType,
+
+        @Schema(description = "환경 특성 목록", example = "[\"QUIET\", \"NEAR_PARK\"]")
+        Set<EnvironmentType> environments,
+        
         @Schema(description = "메모", example = "역세권, 관리 잘됨, 베란다")
         String memo,
 

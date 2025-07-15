@@ -1,9 +1,11 @@
 package com.imjang.domain.property.service;
 
+import com.imjang.domain.property.dto.request.UpdatePropertyDetailRequest;
 import com.imjang.domain.property.dto.response.EvaluationInfo;
 import com.imjang.domain.property.dto.response.LocationDetailInfo;
 import com.imjang.domain.property.dto.response.PropertyDetailResponse;
 import com.imjang.domain.property.dto.response.StationInfo;
+import com.imjang.domain.property.dto.response.UpdatePropertyDetailResponse;
 import com.imjang.domain.property.entity.Property;
 import com.imjang.domain.property.entity.PropertyImage;
 import com.imjang.domain.property.location.dto.TransitInfo;
@@ -32,34 +34,28 @@ public class PropertyDetailService {
    */
   @Transactional(readOnly = true)
   public PropertyDetailResponse getPropertyDetail(Long propertyId, Long userId) {
-    // 1. Property 조회
-    Property property = propertyRepository.findById(propertyId)
+    Property property = propertyRepository.findByIdWithEnvironments(propertyId)
             .orElseThrow(() -> new CustomException(ErrorCode.PROPERTY_NOT_FOUND));
 
-    // 2. 권한 검증 (자신의 매물만 조회 가능)
     if (!property.getUser().getId().equals(userId)) {
       throw new CustomException(ErrorCode.ACCESS_DENIED);
     }
 
-    // 3. Soft delete check
     if (property.getDeletedAt() != null) {
       throw new CustomException(ErrorCode.PROPERTY_NOT_FOUND);
     }
 
-    // 4. 이미지 조회
     List<String> imageUrls = getPropertyImageUrls(propertyId);
 
-    // 5. 평가 정보 생성
+    // 평가 정보 생성
     EvaluationInfo evaluation = new EvaluationInfo(
             property.isMoveInAvailable(),
             property.isRevisitIntention(),
             property.getPriceEvaluation()
     );
 
-    // 6. 위치 상세 정보 조회
     LocationDetailInfo locationInfo = getLocationDetailInfo(property);
 
-    // 7. PropertyDetailResponse 생성
     return new PropertyDetailResponse(
             property.getId(),
             property.getAddress(),
@@ -75,6 +71,8 @@ public class PropertyDetailService {
             property.getRating(),
             imageUrls,
             evaluation,
+            property.getParkingType(),
+            property.getEnvironments(),
             property.getMemo(),
             locationInfo
     );
@@ -96,9 +94,7 @@ public class PropertyDetailService {
    * 위치 상세 정보 조회
    */
   private LocationDetailInfo getLocationDetailInfo(Property property) {
-    // H3 인덱스가 없거나 위치 정보 조회가 완료되지 않은 경우 null 반환
-    if (property.getH3Index() == null
-            || property.getLocationFetchStatus() != com.imjang.domain.property.entity.LocationFetchStatus.COMPLETED) {
+    if (property.getH3Index() == null) {
       return null;
     }
 
@@ -117,17 +113,58 @@ public class PropertyDetailService {
                 );
               }
 
-              // 버스 정보 (현재는 null - 추후 구현)
+              //TODO 버스 정보 (현재는 null - 추후 구현)
               StationInfo bus = null;
 
               return new LocationDetailInfo(
                       subway,
                       bus,
-                      locationInfo.amenityInfos(),
-                      property.getLocationFetchStatus(),
-                      property.getLocationFetchedAt()
+                      locationInfo.amenityInfos()
               );
             })
             .orElse(null);
+  }
+
+  /**
+   * 매물 상세 정보 수정
+   */
+  @Transactional
+  public UpdatePropertyDetailResponse updatePropertyDetail(Long propertyId,
+                                                           UpdatePropertyDetailRequest request,
+                                                           Long userId) {
+    Property property = propertyRepository.findById(propertyId)
+            .orElseThrow(() -> new CustomException(ErrorCode.PROPERTY_NOT_FOUND));
+
+    if (!property.getUser().getId().equals(userId)) {
+      throw new CustomException(ErrorCode.ACCESS_DENIED);
+    }
+
+    if (property.getDeletedAt() != null) {
+      throw new CustomException(ErrorCode.PROPERTY_NOT_FOUND);
+    }
+
+    property.updateDetails(
+            request.moveInAvailable(),
+            request.revisitIntention(),
+            request.priceEvaluation(),
+            request.parkingType(),
+            request.maintenanceFee(),
+            request.environments(),
+            request.memo()
+    );
+
+    Property updatedProperty = propertyRepository.save(property);
+
+    return new UpdatePropertyDetailResponse(
+            updatedProperty.getId(),
+            updatedProperty.isMoveInAvailable(),
+            updatedProperty.isRevisitIntention(),
+            updatedProperty.getPriceEvaluation(),
+            updatedProperty.getParkingType(),
+            updatedProperty.getMaintenanceFee(),
+            updatedProperty.getEnvironments(),
+            updatedProperty.getMemo(),
+            updatedProperty.getUpdatedAt()
+    );
   }
 }
