@@ -4,7 +4,6 @@ import com.imjang.domain.auth.entity.User;
 import com.imjang.domain.auth.repository.UserRepository;
 import com.imjang.domain.property.dto.request.CreatePropertyRequest;
 import com.imjang.domain.property.dto.response.AddPropertyImagesResponse;
-import com.imjang.domain.property.entity.LocationFetchStatus;
 import com.imjang.domain.property.entity.Property;
 import com.imjang.domain.property.entity.PropertyImage;
 import com.imjang.domain.property.entity.TempImage;
@@ -97,8 +96,6 @@ public class PropertyService {
             .latitude(request.latitude())
             .longitude(request.longitude())
             .h3Index(h3Index)
-            .locationFetchStatus(locationCache != null ? LocationFetchStatus.COMPLETED : LocationFetchStatus.PENDING)
-            .locationFetchedAt(locationCache != null ? locationCache.getLastFetchedAt() : null)
             .priceType(request.priceType())
             .deposit(request.deposit())
             .monthlyRent(request.monthlyRent())
@@ -111,6 +108,7 @@ public class PropertyService {
             .moveInAvailable(request.moveInAvailable())
             .revisitIntention(request.revisitIntention())
             .maintenanceFee(request.maintenanceFee())
+            .parkingType(request.parkingType())
             .memo(request.memo())
             .build();
 
@@ -190,7 +188,8 @@ public class PropertyService {
   /**
    * PropertyImage 엔티티 생성
    */
-  private List<PropertyImage> createPropertyImages(Property property, List<TempImage> tempImages, int startDisplayOrder) {
+  private List<PropertyImage> createPropertyImages(Property property, List<TempImage> tempImages,
+                                                   int startDisplayOrder) {
     return IntStream.range(0, tempImages.size())
             .mapToObj(i -> {
               TempImage tempImage = tempImages.get(i);
