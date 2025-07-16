@@ -4,6 +4,9 @@ import com.imjang.domain.auth.entity.User;
 import com.imjang.domain.auth.repository.UserRepository;
 import com.imjang.domain.property.dto.request.CreatePropertyRequest;
 import com.imjang.domain.property.dto.response.AddPropertyImagesResponse;
+import com.imjang.domain.property.dto.response.PriceInfoResponse;
+import com.imjang.domain.property.dto.response.PropertySummaryResponse;
+import com.imjang.domain.property.dto.response.RecentPropertyResponse;
 import com.imjang.domain.property.entity.Property;
 import com.imjang.domain.property.entity.PropertyImage;
 import com.imjang.domain.property.entity.TempImage;
@@ -19,12 +22,17 @@ import com.imjang.global.exception.ErrorCode;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -175,6 +183,65 @@ public class PropertyService {
     log.info("매물 이미지 추가 완료: propertyId={}, addedCount={}", propertyId, imageIds.size());
 
     return AddPropertyImagesResponse.of(imageIds);
+  }
+
+  /**
+   * 최근 매물 목록 조회
+   */
+  @Transactional(readOnly = true)
+  public RecentPropertyResponse getRecentProperties(Long userId, int limit) {
+    PageRequest pageRequest = PageRequest.of(0, limit);
+    Page<Property> propertyPage = propertyRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            userId, pageRequest);
+    List<Property> properties = propertyPage.getContent();
+
+    List<Long> propertyIds = properties.stream()
+            .map(Property::getId)
+            .toList();
+
+    List<PropertyImage> thumbnails;
+    if (propertyIds.isEmpty()) {
+      thumbnails = List.of();
+    } else {
+      thumbnails = propertyImageRepository.findByPropertyIdInAndDisplayOrder(propertyIds, 0);
+    }
+
+    Map<Long, String> thumbnailMap = thumbnails.stream()
+            .collect(Collectors.toMap(
+                    img -> img.getProperty().getId(),
+                    PropertyImage::getThumbnailUrl
+            ));
+
+    List<PropertySummaryResponse> propertySummaries = properties.stream()
+            .map(property -> new PropertySummaryResponse(
+                    property.getId(),
+                    property.getAddress(),
+                    property.getCreatedAt(),
+                    property.getPriceType(),
+                    new PriceInfoResponse(
+                            property.getDeposit(),
+                            property.getMonthlyRent(),
+                            property.getPrice()
+                    ),
+                    property.getRating(),
+                    thumbnailMap.get(property.getId())
+            ))
+            .toList();
+
+    long totalCount = propertyRepository.countByUserIdAndDeletedAtIsNull(userId);
+
+    LocalDateTime startOfMonth = LocalDateTime.now()
+            .withDayOfMonth(1)
+            .withHour(0)
+            .withMinute(0)
+            .withSecond(0)
+            .withNano(0);
+    LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
+
+    long monthlyCount = propertyRepository.countByUserIdAndDeletedAtIsNullAndCreatedAtBetween(
+            userId, startOfMonth, endOfMonth);
+
+    return new RecentPropertyResponse(propertySummaries, totalCount, monthlyCount);
   }
 
   /**
