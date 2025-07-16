@@ -6,6 +6,7 @@ import com.imjang.domain.property.dto.request.CreatePropertyRequest;
 import com.imjang.domain.property.dto.request.PrefetchLocationRequest;
 import com.imjang.domain.property.dto.request.UpdatePropertyDetailRequest;
 import com.imjang.domain.property.dto.response.PropertyDetailResponse;
+import com.imjang.domain.property.dto.response.RecentPropertyResponse;
 import com.imjang.domain.property.dto.response.UpdatePropertyDetailResponse;
 import com.imjang.domain.property.event.LocationPrefetchEvent;
 import com.imjang.domain.property.service.PropertyDetailService;
@@ -19,6 +20,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Property", description = "매물 관련 API")
@@ -127,4 +131,24 @@ public class PropertyController {
     return ResponseEntity.ok(response);
   }
 
+  @Operation(summary = "최근 매물 목록 조회",
+          description = "메인 페이지에 표시할 최근 매물 목록을 조회합니다. 기본 3개, 최대 10개까지 조회 가능")
+  @GetMapping("/recent")
+  @LoginRequired
+  public ResponseEntity<RecentPropertyResponse> getRecentProperties(
+          @Parameter(description = "조회할 매물 개수", example = "3")
+          @RequestParam(value = "limit", defaultValue = "3")
+          @Min(value = 1, message = "최소 1개 이상")
+          @Max(value = 10, message = "최대 10개까지 조회 가능")
+          Integer limit,
+          HttpSession session) {
+    UserSession userSession = (UserSession) session.getAttribute(LoginService.SESSION_KEY);
+    if (userSession == null) {
+      throw new CustomException(ErrorCode.UNAUTHORIZED);
+    }
+
+    RecentPropertyResponse response = propertyService.getRecentProperties(userSession.userId(), limit);
+
+    return ResponseEntity.ok(response);
+  }
 }
