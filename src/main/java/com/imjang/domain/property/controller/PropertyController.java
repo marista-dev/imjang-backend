@@ -1,7 +1,6 @@
 package com.imjang.domain.property.controller;
 
 import com.imjang.domain.auth.dto.UserSession;
-import com.imjang.domain.auth.service.LoginService;
 import com.imjang.domain.property.dto.request.CreatePropertyRequest;
 import com.imjang.domain.property.dto.request.PrefetchLocationRequest;
 import com.imjang.domain.property.dto.request.UpdatePropertyDetailRequest;
@@ -13,12 +12,10 @@ import com.imjang.domain.property.service.PropertyDetailService;
 import com.imjang.domain.property.service.PropertyService;
 import com.imjang.global.annotation.LoginRequired;
 import com.imjang.global.common.response.MessageResponse;
-import com.imjang.global.exception.CustomException;
-import com.imjang.global.exception.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -51,12 +48,9 @@ public class PropertyController {
   @LoginRequired
   public ResponseEntity<MessageResponse> prefetchLocation(
           @Valid @RequestBody PrefetchLocationRequest request,
-          HttpSession session) {
+          HttpServletRequest servletRequest) {
 
-    UserSession userSession = (UserSession) session.getAttribute(LoginService.SESSION_KEY);
-    if (userSession == null) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED);
-    }
+    UserSession userSession = (UserSession) servletRequest.getAttribute("USER_SESSION");
 
     // 비동기로 위치 정보 수집 시작
     eventPublisher.publishEvent(new LocationPrefetchEvent(
@@ -76,12 +70,9 @@ public class PropertyController {
   @LoginRequired
   public ResponseEntity<MessageResponse> createProperty(
           @Valid @RequestBody CreatePropertyRequest request,
-          HttpSession session) {
+          HttpServletRequest servletRequest) {
 
-    UserSession userSession = (UserSession) session.getAttribute(LoginService.SESSION_KEY);
-    if (userSession == null) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED);
-    }
+    UserSession userSession = (UserSession) servletRequest.getAttribute("USER_SESSION");
     propertyService.createProperty(request, userSession.userId());
 
     return ResponseEntity.status(HttpStatus.CREATED)
@@ -95,12 +86,9 @@ public class PropertyController {
   public ResponseEntity<PropertyDetailResponse> getPropertyDetail(
           @Parameter(description = "매물 ID", required = true, example = "1")
           @PathVariable Long propertyId,
-          HttpSession session) {
+          HttpServletRequest servletRequest) {
 
-    UserSession userSession = (UserSession) session.getAttribute(LoginService.SESSION_KEY);
-    if (userSession == null) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED);
-    }
+    UserSession userSession = (UserSession) servletRequest.getAttribute("USER_SESSION");
 
     PropertyDetailResponse response = propertyDetailService.getPropertyDetail(propertyId, userSession.userId());
 
@@ -116,11 +104,8 @@ public class PropertyController {
           @Parameter(description = "매물 ID", required = true, example = "123")
           @PathVariable Long propertyId,
           @Valid @RequestBody UpdatePropertyDetailRequest request,
-          HttpSession session) {
-    UserSession userSession = (UserSession) session.getAttribute(LoginService.SESSION_KEY);
-    if (userSession == null) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED);
-    }
+          HttpServletRequest servletRequest) {
+    UserSession userSession = (UserSession) servletRequest.getAttribute("USER_SESSION");
 
     UpdatePropertyDetailResponse response = propertyDetailService.updatePropertyDetail(
             propertyId,
@@ -141,11 +126,8 @@ public class PropertyController {
           @Min(value = 1, message = "최소 1개 이상")
           @Max(value = 10, message = "최대 10개까지 조회 가능")
           Integer limit,
-          HttpSession session) {
-    UserSession userSession = (UserSession) session.getAttribute(LoginService.SESSION_KEY);
-    if (userSession == null) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED);
-    }
+          HttpServletRequest servletRequest) {
+    UserSession userSession = (UserSession) servletRequest.getAttribute("USER_SESSION");
 
     RecentPropertyResponse response = propertyService.getRecentProperties(userSession.userId(), limit);
 

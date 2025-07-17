@@ -1,17 +1,14 @@
 package com.imjang.domain.property.controller;
 
 import com.imjang.domain.auth.dto.UserSession;
-import com.imjang.domain.auth.service.LoginService;
 import com.imjang.domain.property.dto.request.AddPropertyImagesRequest;
 import com.imjang.domain.property.dto.response.AddPropertyImagesResponse;
 import com.imjang.domain.property.service.PropertyService;
 import com.imjang.global.annotation.LoginRequired;
-import com.imjang.global.exception.CustomException;
-import com.imjang.global.exception.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -38,12 +35,9 @@ public class PropertyImageController {
           @Parameter(description = "매물 ID", required = true, example = "1")
           @PathVariable Long propertyId,
           @Valid @RequestBody AddPropertyImagesRequest request,
-          HttpSession session) {
+          HttpServletRequest servletRequest) {
 
-    UserSession userSession = (UserSession) session.getAttribute(LoginService.SESSION_KEY);
-    if (userSession == null) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED);
-    }
+    UserSession userSession = (UserSession) servletRequest.getAttribute("USER_SESSION");
 
     AddPropertyImagesResponse response = propertyService.addImagesToProperty(
             propertyId,
