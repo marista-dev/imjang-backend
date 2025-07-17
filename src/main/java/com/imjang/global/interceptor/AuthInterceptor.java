@@ -47,6 +47,9 @@ public class AuthInterceptor implements HandlerInterceptor {
       throw new CustomException(ErrorCode.UNAUTHORIZED);
     }
 
+    // 검증된 사용자 세션을 request attribute에 저장
+    request.setAttribute("USER_SESSION", userSession);
+
     log.debug("🔓인증된 사용자 정보: {}", userSession.email());
 
     return true;
