@@ -5,6 +5,7 @@ import com.imjang.domain.property.dto.request.CreatePropertyRequest;
 import com.imjang.domain.property.dto.request.PrefetchLocationRequest;
 import com.imjang.domain.property.dto.request.UpdatePropertyDetailRequest;
 import com.imjang.domain.property.dto.response.PropertyDetailResponse;
+import com.imjang.domain.property.dto.response.PropertyTimelineResponse;
 import com.imjang.domain.property.dto.response.RecentPropertyResponse;
 import com.imjang.domain.property.dto.response.UpdatePropertyDetailResponse;
 import com.imjang.domain.property.event.LocationPrefetchEvent;
@@ -21,6 +22,8 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -95,7 +98,6 @@ public class PropertyController {
     return ResponseEntity.ok(response);
   }
 
-  // 기존 메서드들 아래에 추가할 PATCH 엔드포인트
   @Operation(summary = "매물 상세 정보 수정",
           description = "매물의 체크리스트 및 추가 정보를 수정. 전달된 필드만 업데이트")
   @PatchMapping("/{propertyId}/detail")
@@ -130,6 +132,35 @@ public class PropertyController {
     UserSession userSession = (UserSession) servletRequest.getAttribute("USER_SESSION");
 
     RecentPropertyResponse response = propertyService.getRecentProperties(userSession.userId(), limit);
+
+    return ResponseEntity.ok(response);
+  }
+
+  @Operation(summary = "매물 타임라인 조회",
+          description = "날짜별로 그룹화된 매물 목록을 조회. 페이징 지원")
+  @GetMapping("/timeline")
+  @LoginRequired
+  public ResponseEntity<PropertyTimelineResponse> getPropertyTimeline(
+          @Parameter(description = "페이지 번호 (0부터 시작)", example = "0")
+          @RequestParam(value = "page", defaultValue = "0")
+          @Min(value = 0, message = "페이지는 0 이상이어야 합니다")
+          Integer page,
+
+          @Parameter(description = "페이지 크기", example = "20")
+          @RequestParam(value = "size", defaultValue = "20")
+          @Min(value = 1, message = "페이지 크기는 1 이상이어야 합니다")
+          @Max(value = 100, message = "페이지 크기는 100 이하여야 합니다")
+          Integer size,
+
+          HttpServletRequest servletRequest) {
+
+    UserSession userSession = (UserSession) servletRequest.getAttribute("USER_SESSION");
+    Pageable pageable = PageRequest.of(page, size);
+
+    PropertyTimelineResponse response = propertyService.getPropertyTimeline(
+            userSession.userId(),
+            pageable
+    );
 
     return ResponseEntity.ok(response);
   }
