@@ -6,7 +6,10 @@ import com.imjang.domain.property.dto.request.CreatePropertyRequest;
 import com.imjang.domain.property.dto.response.AddPropertyImagesResponse;
 import com.imjang.domain.property.dto.response.PriceInfoResponse;
 import com.imjang.domain.property.dto.response.PropertySummaryResponse;
+import com.imjang.domain.property.dto.response.PropertyTimelineResponse;
 import com.imjang.domain.property.dto.response.RecentPropertyResponse;
+import com.imjang.domain.property.dto.response.TimelineGroupResponse;
+import com.imjang.domain.property.dto.response.TimelinePropertyResponse;
 import com.imjang.domain.property.entity.Property;
 import com.imjang.domain.property.entity.PropertyImage;
 import com.imjang.domain.property.entity.TempImage;
@@ -22,7 +25,10 @@ import com.imjang.global.exception.ErrorCode;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -33,6 +39,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -242,6 +249,56 @@ public class PropertyService {
             userId, startOfMonth, endOfMonth);
 
     return new RecentPropertyResponse(propertySummaries, totalCount, monthlyCount);
+  }
+
+  /**
+   * 타임라인 조회
+   */
+  @Transactional(readOnly = true)
+  public PropertyTimelineResponse getPropertyTimeline(Long userId, Pageable pageable) {
+    Page<Property> propertyPage = propertyRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            userId, pageable);
+    List<Property> properties = propertyPage.getContent();
+
+    if (properties.isEmpty()) {
+      return PropertyTimelineResponse.of(List.of(), false);
+    }
+
+    List<Long> propertyIds = properties.stream()
+            .map(Property::getId)
+            .toList();
+
+    List<PropertyImage> thumbnails = propertyImageRepository.findByPropertyIdInAndDisplayOrder(
+            propertyIds, 0);
+    Map<Long, String> thumbnailMap = thumbnails.stream()
+            .collect(Collectors.toMap(
+                    img -> img.getProperty().getId(),
+                    PropertyImage::getImageUrl
+            ));
+    Map<LocalDate, List<TimelinePropertyResponse>> groupedByDate = new LinkedHashMap<>();
+    for (Property property : properties) {
+      LocalDate date = property.getCreatedAt().toLocalDate();
+      TimelinePropertyResponse timelineProperty = new TimelinePropertyResponse(
+              property.getId(),
+              property.getCreatedAt(),
+              property.getAddress(),
+              property.getRating(),
+              property.getPriceType(),
+              property.getDeposit(),
+              property.getMonthlyRent(),
+              property.getArea(),
+              property.getCurrentFloor(),
+              property.getTotalFloor(),
+              thumbnailMap.get(property.getId())
+      );
+
+      groupedByDate.computeIfAbsent(date, k -> new ArrayList<>()).add(timelineProperty);
+    }
+    List<TimelineGroupResponse> timelineGroups = groupedByDate.entrySet().stream()
+            .map(entry -> new TimelineGroupResponse(entry.getKey(), entry.getValue()))
+            .toList();
+    boolean hasNext = propertyPage.hasNext();
+    return PropertyTimelineResponse.of(timelineGroups, hasNext);
   }
 
   /**

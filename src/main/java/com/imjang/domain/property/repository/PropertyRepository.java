@@ -19,7 +19,7 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
   // 삭제되지 않은 매물만 조회
   Optional<Property> findByIdAndDeletedAtIsNull(Long id);
 
-  // 최근 매물 조회
+  // 최근 매물 조회 & 타임라인 매물 조회
   Page<Property> findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
   // 전체 매물 개수 조회
