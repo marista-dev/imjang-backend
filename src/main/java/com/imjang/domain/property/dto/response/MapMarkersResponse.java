@@ -9,7 +9,4 @@ public record MapMarkersResponse(
         List<PropertyMarkerResponse> markers
 ) {
 
-  public static MapMarkersResponse of(List<PropertyMarkerResponse> markers) {
-    return new MapMarkersResponse(markers);
-  }
 }

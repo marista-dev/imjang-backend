@@ -261,7 +261,7 @@ public class PropertyService {
     List<Property> properties = propertyPage.getContent();
 
     if (properties.isEmpty()) {
-      return PropertyTimelineResponse.of(List.of(), false);
+      return new PropertyTimelineResponse(List.of(), false);
     }
 
     List<Long> propertyIds = properties.stream()
@@ -298,7 +298,7 @@ public class PropertyService {
             .map(entry -> new TimelineGroupResponse(entry.getKey(), entry.getValue()))
             .toList();
     boolean hasNext = propertyPage.hasNext();
-    return PropertyTimelineResponse.of(timelineGroups, hasNext);
+    return new PropertyTimelineResponse(timelineGroups, hasNext);
   }
 
   /**

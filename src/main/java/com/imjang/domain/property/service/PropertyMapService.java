@@ -46,7 +46,7 @@ public class PropertyMapService {
             .map(PropertyMarkerResponse::from)
             .toList();
 
-    return MapMarkersResponse.of(markers);
+    return new MapMarkersResponse(markers);
   }
 
   /**
