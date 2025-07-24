@@ -26,6 +26,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -80,6 +81,21 @@ public class PropertyController {
 
     return ResponseEntity.status(HttpStatus.CREATED)
             .body(MessageResponse.of("매물이 성공적으로 기록되었습니다."));
+  }
+
+  @Operation(summary = "매물 삭제",
+          description = "매물 삭제 관련 이미지도 함께 삭제 상태로 변경")
+  @DeleteMapping("/{propertyId}")
+  @LoginRequired
+  public ResponseEntity<MessageResponse> deleteProperty(
+          @Parameter(description = "삭제할 매물 ID", required = true, example = "123")
+          @PathVariable Long propertyId,
+          HttpServletRequest servletRequest) {
+
+    UserSession userSession = (UserSession) servletRequest.getAttribute("USER_SESSION");
+    propertyService.deleteProperty(propertyId, userSession.userId());
+
+    return ResponseEntity.ok(MessageResponse.of("매물이 삭제되었습니다."));
   }
 
   @Operation(summary = "매물 상세 조회",

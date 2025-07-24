@@ -70,6 +70,11 @@ spring:
       enabled: true
       max-file-size: 10MB
       max-request-size: 50MB  # 사진 여러 장 업로드 고려
+  task:
+    scheduling:
+      pool:
+        size: 5           # 스케줄러 스레드 풀 크기
+      thread-name-prefix: imjang-scheduler-
 
 # 서버 설정
 server:
@@ -144,6 +149,13 @@ app:
     width: 300
     height: 300
     format: png
+  cleanup:
+    retention-days: 30
+    batch-size: 100
+    enabled: true
+  s3:
+    image-prefix: images
+    thumbnail-prefix: thumbnails
 
 # S3 설정
 cloud:
