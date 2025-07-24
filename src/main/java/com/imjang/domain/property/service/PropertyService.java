@@ -10,6 +10,7 @@ import com.imjang.domain.property.dto.response.PropertyTimelineResponse;
 import com.imjang.domain.property.dto.response.RecentPropertyResponse;
 import com.imjang.domain.property.dto.response.TimelineGroupResponse;
 import com.imjang.domain.property.dto.response.TimelinePropertyResponse;
+import com.imjang.domain.property.entity.ImageStatus;
 import com.imjang.domain.property.entity.Property;
 import com.imjang.domain.property.entity.PropertyImage;
 import com.imjang.domain.property.entity.TempImage;
@@ -261,7 +262,7 @@ public class PropertyService {
     List<Property> properties = propertyPage.getContent();
 
     if (properties.isEmpty()) {
-      return PropertyTimelineResponse.of(List.of(), false);
+      return new PropertyTimelineResponse(List.of(), false);
     }
 
     List<Long> propertyIds = properties.stream()
@@ -298,7 +299,23 @@ public class PropertyService {
             .map(entry -> new TimelineGroupResponse(entry.getKey(), entry.getValue()))
             .toList();
     boolean hasNext = propertyPage.hasNext();
-    return PropertyTimelineResponse.of(timelineGroups, hasNext);
+    return new PropertyTimelineResponse(timelineGroups, hasNext);
+  }
+
+  /**
+   * 매물 삭제
+   */
+  @Transactional
+  public void deleteProperty(Long propertyId, Long userId) {
+    Property property = propertyRepository.findByIdAndUserIdAndDeletedAtIsNull(propertyId, userId)
+            .orElseThrow(() -> new CustomException(ErrorCode.PROPERTY_NOT_FOUND));
+
+    property.softDelete();
+
+    int updatedImageCount = propertyImageRepository.updateStatusByPropertyId(propertyId, ImageStatus.DELETED);
+
+    log.info("매물 삭제 완료: propertyId={}, userId={}, deletedImageCount={}",
+            propertyId, userId, updatedImageCount);
   }
 
   /**

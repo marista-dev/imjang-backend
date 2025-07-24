@@ -19,6 +19,9 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
   // 삭제되지 않은 매물만 조회
   Optional<Property> findByIdAndDeletedAtIsNull(Long id);
 
+  // 사용자별 삭제되지 않은 매물 조회(소유권 확인용)
+  Optional<Property> findByIdAndUserIdAndDeletedAtIsNull(Long id, Long userId);
+
   // 최근 매물 조회 & 타임라인 매물 조회
   Page<Property> findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
@@ -32,4 +35,9 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
 
   // H3 인덱스 기반 매물 조회 (삭제되지 않은 것만)
   List<Property> findByUserIdAndH3IndexInAndDeletedAtIsNull(Long userId, Set<String> h3Indices);
+
+  // 삭제된 매물 정리용 쿼리 (DB 레벨 필터링)
+  @Query("SELECT p FROM Property p WHERE p.deletedAt IS NOT NULL AND p.deletedAt < :cutoffDate")
+  Page<Property> findDeletedPropertiesBeforeDate(@Param("cutoffDate") LocalDateTime cutoffDate, 
+                                                  Pageable pageable);
 }

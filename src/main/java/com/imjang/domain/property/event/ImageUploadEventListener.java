@@ -1,6 +1,6 @@
 package com.imjang.domain.property.event;
 
-import com.imjang.domain.property.entity.ImageUploadStatus;
+import com.imjang.domain.property.entity.ImageStatus;
 import com.imjang.domain.property.entity.PropertyImage;
 import com.imjang.domain.property.entity.TempImage;
 import com.imjang.domain.property.repository.PropertyImageRepository;
@@ -52,7 +52,7 @@ public class ImageUploadEventListener {
    */
   private void uploadImageToS3(PropertyImage image) {
     try {
-      image.updateStatus(ImageUploadStatus.UPLOADING);
+      image.updateStatus(ImageStatus.UPLOADING);
       propertyImageRepository.save(image);
 
       // TempImage에서 실제 파일 경로 가져오기
@@ -89,7 +89,7 @@ public class ImageUploadEventListener {
 
     } catch (Exception e) {
       log.error("❌이미지 S3 업로드 실패: imageId={}", image.getId(), e);
-      image.updateStatus(ImageUploadStatus.FAILED);
+      image.updateStatus(ImageStatus.FAILED);
       propertyImageRepository.save(image);
       throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
     }
