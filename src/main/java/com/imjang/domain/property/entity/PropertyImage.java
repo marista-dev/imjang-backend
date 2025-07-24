@@ -50,7 +50,7 @@ public class PropertyImage extends BaseEntity {
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 20)
   @Builder.Default
-  private ImageUploadStatus status = ImageUploadStatus.PENDING;
+  private ImageStatus status = ImageStatus.PENDING;
 
   /**
    * S3 업로드 완료 후 URL 업데이트
@@ -58,13 +58,13 @@ public class PropertyImage extends BaseEntity {
   public void updateUrls(String imageUrl, String thumbnailUrl) {
     this.imageUrl = imageUrl;
     this.thumbnailUrl = thumbnailUrl;
-    this.status = ImageUploadStatus.COMPLETED;
+    this.status = ImageStatus.COMPLETED;
   }
 
   /**
    * 상태 변경
    */
-  public void updateStatus(ImageUploadStatus status) {
+  public void updateStatus(ImageStatus status) {
     this.status = status;
   }
 }

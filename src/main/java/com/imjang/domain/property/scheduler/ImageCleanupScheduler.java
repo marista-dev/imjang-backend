@@ -1,6 +1,6 @@
 package com.imjang.domain.property.scheduler;
 
-import com.imjang.domain.property.entity.ImageUploadStatus;
+import com.imjang.domain.property.entity.ImageStatus;
 import com.imjang.domain.property.entity.PropertyImage;
 import com.imjang.domain.property.entity.TempImage;
 import com.imjang.domain.property.event.PropertyCreatedEvent;
@@ -38,7 +38,7 @@ public class ImageCleanupScheduler {
 
     // COMPLETED 상태이고 1시간 이상 지난 이미지 조회
     List<PropertyImage> completedImages = propertyImageRepository.findAll().stream()
-            .filter(img -> img.getStatus() == ImageUploadStatus.COMPLETED)
+            .filter(img -> img.getStatus() == ImageStatus.COMPLETED)
             .filter(img -> img.getUpdatedAt().isBefore(oneHourAgo))
             .limit(100)
             .toList();
@@ -109,7 +109,7 @@ public class ImageCleanupScheduler {
 
     // FAILED 상태이고 10분 이상 지난 이미지 조회
     List<PropertyImage> failedImages = propertyImageRepository.findAll().stream()
-            .filter(img -> img.getStatus() == ImageUploadStatus.FAILED)
+            .filter(img -> img.getStatus() == ImageStatus.FAILED)
             .filter(img -> img.getUpdatedAt().isBefore(tenMinutesAgo))
             .limit(20)
             .toList();
