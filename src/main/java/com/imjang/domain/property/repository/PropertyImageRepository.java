@@ -28,7 +28,9 @@ public interface PropertyImageRepository extends JpaRepository<PropertyImage, Lo
 
   // 삭제된 이미지 정리용 쿼리 (DB 레벨 필터링)
   @Query("SELECT pi FROM PropertyImage pi WHERE pi.status = :status AND pi.updatedAt < :cutoffDate")
-  Page<PropertyImage> findByStatusAndUpdatedAtBefore(@Param("status") ImageStatus status, 
+  Page<PropertyImage> findByStatusAndUpdatedAtBefore(@Param("status") ImageStatus status,
                                                      @Param("cutoffDate") LocalDateTime cutoffDate,
                                                      Pageable pageable);
+
+  Optional<PropertyImage> findByIdAndPropertyIdAndStatusNot(Long id, Long propertyId, ImageStatus status);
 }

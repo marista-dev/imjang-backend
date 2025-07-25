@@ -319,6 +319,21 @@ public class PropertyService {
   }
 
   /**
+   * 매물 이미지 단일 삭제
+   */
+  @Transactional
+  public void deletePropertyImage(Long propertyId, Long imageId, Long userId) {
+    Property property = propertyRepository.findByIdAndUserIdAndDeletedAtIsNull(propertyId, userId)
+            .orElseThrow(() -> new CustomException(ErrorCode.PROPERTY_NOT_FOUND));
+
+    PropertyImage propertyImage = propertyImageRepository
+            .findByIdAndPropertyIdAndStatusNot(imageId, propertyId, ImageStatus.DELETED)
+            .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND));
+
+    propertyImage.updateStatus(ImageStatus.DELETED);
+  }
+
+  /**
    * 임시 이미지를 매물 이미지로 연결
    */
   private List<PropertyImage> linkImagesToProperty(Property property, List<TempImage> tempImages) {
