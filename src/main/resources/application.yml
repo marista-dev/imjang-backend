@@ -5,8 +5,8 @@ spring:
   # 데이터베이스 설정
   datasource:
     url: jdbc:postgresql://localhost:5432/imjang_db
-    username:
-    password:
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     
     # HikariCP 설정 (Connection Pool)
@@ -149,14 +149,14 @@ app:
 cloud:
   aws:
     credentials:
-      access-key: ${AWS_ACCESS_KEY_ID}
-      secret-key: ${AWS_SECRET_ACCESS_KEY}
+      access-key: ${OCI_ACCESS_KEY}
+      secret-key: ${OCI_SECRET_KEY}
     s3:
-      bucket: imjang-images-2025
-      region: ap-northeast-2
-      endpoint: https://s3.ap-northeast-2.amazonaws.com
+      bucket: ${OCI_BUCKET}
+      region: ${OCI_REGION}
+      endpoint: ${OCI_ENDPOINT}
     region:
-      static: ap-northeast-2
+      static: ${OCI_REGION}
     stack:
       auto: false
 

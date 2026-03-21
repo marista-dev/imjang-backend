@@ -83,6 +83,9 @@ dependencies {
 
     // 이메일 발송
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // 로컬 .env 환경변수 주입
+    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 }
 
 tasks.named('test') {
