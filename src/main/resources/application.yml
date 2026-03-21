@@ -155,6 +155,7 @@ cloud:
       bucket: ${OCI_BUCKET}
       region: ${OCI_REGION}
       endpoint: ${OCI_ENDPOINT}
+      namespace: ${OCI_NAMESPACE}
     region:
       static: ${OCI_REGION}
     stack:

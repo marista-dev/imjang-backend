@@ -76,6 +76,7 @@ public class S3Config {
       private String bucket;
       private String region;
       private String endpoint;
+      private String namespace;
       private String imagePrefix = "images/properties";
       private String thumbnailPrefix = "thumbnails/properties";
     }

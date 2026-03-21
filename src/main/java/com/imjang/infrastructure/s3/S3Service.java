@@ -121,12 +121,14 @@ public class S3Service {
   }
 
   /**
-   * 공개 URL 생성
+   * Oracle Object Storage 공개 URL 생성
+   * 형식: https://objectstorage.{region}.oraclecloud.com/n/{namespace}/b/{bucket}/o/{key}
    */
   private String generatePublicUrl(String key) {
-    return String.format("https://%s.s3.%s.amazonaws.com/%s",
-            s3Properties.getS3().getBucket(),
+    return String.format("https://objectstorage.%s.oraclecloud.com/n/%s/b/%s/o/%s",
             s3Properties.getS3().getRegion(),
+            s3Properties.getS3().getNamespace(),
+            s3Properties.getS3().getBucket(),
             key);
   }
 }
