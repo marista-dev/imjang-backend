@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: imjang-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: imjang_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - imjang-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d imjang_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ghcr.io/${GITHUB_USERNAME}/imjang-backend:latest
+    container_name: imjang-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EMAIL_USERNAME: ${EMAIL_USERNAME}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      KAKAO_API_KEY: ${KAKAO_API_KEY}
+      OCI_ACCESS_KEY: ${OCI_ACCESS_KEY}
+      OCI_SECRET_KEY: ${OCI_SECRET_KEY}
+      OCI_BUCKET: ${OCI_BUCKET}
+      OCI_REGION: ${OCI_REGION}
+      OCI_NAMESPACE: ${OCI_NAMESPACE}
+      OCI_ENDPOINT: ${OCI_ENDPOINT}
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    volumes:
+      - uploads:/app/uploads
+      - ~/imjang/logs:/app/logs
+    networks:
+      - imjang-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: imjang-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - app
+    networks:
+      - imjang-net
+
+volumes:
+  postgres_data:
+  uploads:
+
+networks:
+  imjang-net:
+    driver: bridge
