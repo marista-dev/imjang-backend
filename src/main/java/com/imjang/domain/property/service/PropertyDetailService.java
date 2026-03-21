@@ -4,8 +4,10 @@ import com.imjang.domain.property.dto.request.UpdatePropertyDetailRequest;
 import com.imjang.domain.property.dto.response.EvaluationInfo;
 import com.imjang.domain.property.dto.response.LocationDetailInfo;
 import com.imjang.domain.property.dto.response.PropertyDetailResponse;
+import com.imjang.domain.property.dto.response.PropertyImageDto;
 import com.imjang.domain.property.dto.response.StationInfo;
 import com.imjang.domain.property.dto.response.UpdatePropertyDetailResponse;
+import com.imjang.domain.property.entity.ImageStatus;
 import com.imjang.domain.property.entity.Property;
 import com.imjang.domain.property.entity.PropertyImage;
 import com.imjang.domain.property.location.dto.TransitInfo;
@@ -45,7 +47,7 @@ public class PropertyDetailService {
       throw new CustomException(ErrorCode.PROPERTY_NOT_FOUND);
     }
 
-    List<String> imageUrls = getPropertyImageUrls(propertyId);
+    List<PropertyImageDto> images = getPropertyImages(propertyId);
 
     // 평가 정보 생성
     EvaluationInfo evaluation = new EvaluationInfo(
@@ -69,7 +71,7 @@ public class PropertyDetailService {
             property.getCurrentFloor(),
             property.getTotalFloor(),
             property.getRating(),
-            imageUrls,
+            images,
             evaluation,
             property.getParkingType(),
             property.getEnvironments(),
@@ -79,14 +81,22 @@ public class PropertyDetailService {
   }
 
   /**
-   * 매물 이미지 URL 목록 조회
+   * 매물 이미지 목록 조회.
+   * COMPLETED 이미지 우선 반환, 없으면 PENDING fallback (업로드 전 신규 매물 대응).
    */
-  private List<String> getPropertyImageUrls(Long propertyId) {
-    List<PropertyImage> images = propertyImageRepository.findByPropertyIdOrderByDisplayOrder(
-            propertyId);
+  private List<PropertyImageDto> getPropertyImages(Long propertyId) {
+    List<PropertyImage> all = propertyImageRepository.findByPropertyIdOrderByDisplayOrder(propertyId);
 
-    return images.stream()
-            .map(PropertyImage::getThumbnailUrl)
+    List<PropertyImage> completed = all.stream()
+            .filter(img -> img.getStatus() == ImageStatus.COMPLETED)
+            .toList();
+
+    List<PropertyImage> display = completed.isEmpty()
+            ? all.stream().filter(img -> img.getStatus() == ImageStatus.PENDING).toList()
+            : completed;
+
+    return display.stream()
+            .map(img -> new PropertyImageDto(img.getId(), img.getThumbnailUrl(), img.getImageUrl()))
             .toList();
   }
 

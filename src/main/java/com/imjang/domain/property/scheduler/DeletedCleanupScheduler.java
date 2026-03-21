@@ -157,9 +157,8 @@ public class DeletedCleanupScheduler {
     LocalDateTime cutoffDate = LocalDateTime.now().minusDays(retentionDays);
     PageRequest pageRequest = PageRequest.of(0, batchSize);
 
-    Page<PropertyImage> deletedImagePage = propertyImageRepository.findByStatusAndUpdatedAtBefore(
+    List<PropertyImage> deletedImages = propertyImageRepository.findByStatusAndUpdatedAtBefore(
             ImageStatus.DELETED, cutoffDate, pageRequest);
-    List<PropertyImage> deletedImages = deletedImagePage.getContent();
 
     int deletedCount = 0;
 

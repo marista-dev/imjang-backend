@@ -47,8 +47,8 @@ public record PropertyDetailResponse(
         @Schema(description = "평점", example = "4")
         Integer rating,
 
-        @Schema(description = "이미지 URL 목록")
-        List<String> images,
+        @Schema(description = "이미지 목록")
+        List<PropertyImageDto> images,
 
         @Schema(description = "평가 정보")
         EvaluationInfo evaluation,
