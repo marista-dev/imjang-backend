@@ -12,10 +12,11 @@ import java.io.File;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * 이미지 업로드 이벤트 리스너
@@ -30,36 +31,35 @@ public class ImageUploadEventListener {
   private final S3Service s3Service;
 
   /**
-   * 매물 생성 시 이미지 S3 업로드
+   * 매물 생성 시 이미지 S3 업로드.
+   * 트랜잭션 커밋 후 실행되어 PropertyImage가 DB에 확실히 존재함을 보장.
    */
   @Async("imageUploadExecutor")
-  @EventListener
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   @Transactional
   public void handlePropertyCreated(PropertyCreatedEvent event) {
     log.info("⬆이미지 S3 업로드 시작: propertyId={}", event.propertyId());
 
     List<PropertyImage> images = propertyImageRepository.findAllById(event.propertyImageIds());
-
     images.sort((a, b) -> a.getDisplayOrder().compareTo(b.getDisplayOrder()));
 
     for (PropertyImage image : images) {
       uploadImageToS3(image);
     }
+
+    propertyImageRepository.saveAll(images);
   }
 
   /**
-   * 개별 이미지 S3 업로드
+   * 개별 이미지 S3 업로드. 실패 시 FAILED 상태로 마킹하고 다음 이미지 처리를 계속함.
    */
   private void uploadImageToS3(PropertyImage image) {
     try {
       image.updateStatus(ImageStatus.UPLOADING);
-      propertyImageRepository.save(image);
 
-      // TempImage에서 실제 파일 경로 가져오기
       TempImage tempImage = tempImageRepository.findById(image.getTempImageId())
               .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND));
 
-      // 로컬 파일 찾기
       File originalFile = new File(tempImage.getOriginalUrl());
       File thumbnailFile = new File(tempImage.getThumbnailUrl());
 
@@ -67,7 +67,6 @@ public class ImageUploadEventListener {
         throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
       }
 
-      // S3 업로드
       String s3ImageUrl = s3Service.uploadImage(
               originalFile,
               image.getProperty().getId(),
@@ -80,9 +79,7 @@ public class ImageUploadEventListener {
               thumbnailFile.getName()
       );
 
-      // URL 업데이트 및 상태 변경
       image.updateUrls(s3ImageUrl, s3ThumbnailUrl);
-      propertyImageRepository.save(image);
 
       log.info("✅이미지 S3 업로드 완료: imageId={}, propertyId={}",
               image.getId(), image.getProperty().getId());
@@ -90,8 +87,6 @@ public class ImageUploadEventListener {
     } catch (Exception e) {
       log.error("❌이미지 S3 업로드 실패: imageId={}", image.getId(), e);
       image.updateStatus(ImageStatus.FAILED);
-      propertyImageRepository.save(image);
-      throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
     }
   }
 }
