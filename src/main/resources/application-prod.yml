@@ -46,7 +46,7 @@ server:
   servlet:
     session:
       cookie:
-        secure: false  # HTTPS 설정 전까지는 false
+        secure: true
 
 springdoc:
   swagger-ui:
