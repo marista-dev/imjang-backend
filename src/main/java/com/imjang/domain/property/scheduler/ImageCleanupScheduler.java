@@ -12,6 +12,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,22 +30,18 @@ public class ImageCleanupScheduler {
   private final ApplicationEventPublisher eventPublisher;
 
   /**
-   * 매시간 실행: S3 업로드 완료된 로컬 파일 삭제
+   * 매시간 실행: S3 업로드 완료된 로컬 임시 파일 삭제
    */
   @Scheduled(cron = "0 0 * * * *")
   @Transactional
   public void deleteCompletedLocalFiles() {
     LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
 
-    // COMPLETED 상태이고 1시간 이상 지난 이미지 조회
-    List<PropertyImage> completedImages = propertyImageRepository.findAll().stream()
-            .filter(img -> img.getStatus() == ImageStatus.COMPLETED)
-            .filter(img -> img.getUpdatedAt().isBefore(oneHourAgo))
-            .limit(100)
-            .toList();
+    List<PropertyImage> completedImages = propertyImageRepository.findByStatusAndUpdatedAtBefore(
+            ImageStatus.COMPLETED, oneHourAgo, PageRequest.of(0, 100));
+
     for (PropertyImage image : completedImages) {
       try {
-        // TempImage 조회하여 로컬 파일 경로 확인
         if (image.getTempImageId() != null) {
           tempImageRepository.findById(image.getTempImageId())
                   .ifPresent(tempImage -> {
@@ -60,35 +57,21 @@ public class ImageCleanupScheduler {
   }
 
   /**
-   * 매시간 실행: 만료된 temp_images 삭제
+   * 매시간 실행: 만료된 미연결 TempImage 삭제
    */
   @Scheduled(cron = "0 30 * * * *")
   @Transactional
   public void deleteExpiredTempImages() {
     log.info("만료된 임시 이미지 삭제 시작");
 
-    LocalDateTime now = LocalDateTime.now();
-
-    // 만료된 TempImage 조회 (연결된 PropertyImage가 없는 것만)
-    List<TempImage> expiredImages = tempImageRepository.findAll().stream()
-            .filter(img -> img.getExpiresAt().isBefore(now))
-            .limit(100)
-            .toList();
+    List<TempImage> expiredImages = tempImageRepository.findExpiredAndUnlinked(
+            LocalDateTime.now(), PageRequest.of(0, 100));
 
     for (TempImage tempImage : expiredImages) {
       try {
-        // PropertyImage와 연결되지 않은 것만 삭제
-        boolean isLinked = propertyImageRepository.findAll().stream()
-                .anyMatch(pi -> tempImage.getId().equals(pi.getTempImageId()));
-
-        if (!isLinked) {
-          // 로컬 파일 삭제
-          deleteLocalFile(tempImage.getOriginalUrl());
-          deleteLocalFile(tempImage.getThumbnailUrl());
-
-          // DB 레코드 삭제
-          tempImageRepository.delete(tempImage);
-        }
+        deleteLocalFile(tempImage.getOriginalUrl());
+        deleteLocalFile(tempImage.getThumbnailUrl());
+        tempImageRepository.delete(tempImage);
       } catch (Exception e) {
         log.error("만료된 임시 이미지 삭제 실패: tempImageId={}", tempImage.getId(), e);
       }
@@ -98,40 +81,25 @@ public class ImageCleanupScheduler {
   }
 
   /**
-   * 10분마다 실행: 실패한 업로드 재시도
+   * 10분마다 실행: 생성 후 3시간 이내 FAILED 이미지 재시도
    */
   @Scheduled(cron = "0 */10 * * * *")
   @Transactional
   public void retryFailedUploads() {
     log.info("실패한 이미지 업로드 재시도 시작");
 
-    LocalDateTime tenMinutesAgo = LocalDateTime.now().minusMinutes(10);
+    LocalDateTime threeHoursAgo = LocalDateTime.now().minusHours(3);
 
-    // FAILED 상태이고 10분 이상 지난 이미지 조회
-    List<PropertyImage> failedImages = propertyImageRepository.findAll().stream()
-            .filter(img -> img.getStatus() == ImageStatus.FAILED)
-            .filter(img -> img.getUpdatedAt().isBefore(tenMinutesAgo))
-            .limit(20)
-            .toList();
+    List<PropertyImage> failedImages = propertyImageRepository.findByStatusAndCreatedAtAfter(
+            ImageStatus.FAILED, threeHoursAgo, PageRequest.of(0, 20));
 
     for (PropertyImage image : failedImages) {
       try {
-        // 최대 3회까지만 재시도 (createdAt과 updatedAt 차이로 대략 계산)
-        long hoursElapsed = java.time.Duration.between(
-                image.getCreatedAt(),
-                LocalDateTime.now()
-        ).toHours();
-
-        if (hoursElapsed < 3) {
-          // 재시도를 위해 이벤트 발행
-          eventPublisher.publishEvent(new PropertyCreatedEvent(
-                  image.getProperty().getId(),
-                  List.of(image.getId())
-          ));
-          log.info("이미지 업로드 재시도: imageId={}", image.getId());
-        } else {
-          log.warn("최대 재시도 횟수 초과: imageId={}", image.getId());
-        }
+        eventPublisher.publishEvent(new PropertyCreatedEvent(
+                image.getProperty().getId(),
+                List.of(image.getId())
+        ));
+        log.info("이미지 업로드 재시도: imageId={}", image.getId());
       } catch (Exception e) {
         log.error("재시도 실패: imageId={}", image.getId(), e);
       }
