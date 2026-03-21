@@ -344,6 +344,9 @@ temp/
 .aws/
 aws.properties
 
+# Claude Code
+.claude/
+
 # 환경 변수 파일
 .env
 .env.local
