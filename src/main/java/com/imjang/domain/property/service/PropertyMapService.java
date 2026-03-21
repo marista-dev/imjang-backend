@@ -44,7 +44,7 @@ public class PropertyMapService {
               getH3Resolution(request.zoomLevel())
       );
     } catch (Exception e) {
-      log.warn("H3 변환 실패, 빈 마커 반환: {}", e.getMessage());
+      log.warn("H3 변환 실패, 빈 마커 반환", e);
       return new MapMarkersResponse(List.of());
     }
 

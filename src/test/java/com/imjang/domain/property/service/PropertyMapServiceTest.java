@@ -124,6 +124,67 @@ class PropertyMapServiceTest {
   }
 
   @Test
+  @DisplayName("지도 마커 조회 - 썸네일 IN절 매핑 검증")
+  void getMapMarkers_Success_WithThumbnail() {
+    // Given
+    MapBoundsRequest request = new MapBoundsRequest(
+            37.5100, 127.0500, 37.4900, 127.0300, 15
+    );
+    Long userId = 1L;
+    Set<String> h3Indices = Set.of("891f0d92b93ffff");
+
+    Property property = mock(Property.class, withSettings().lenient());
+    when(property.getId()).thenReturn(1L);
+    when(property.getLatitude()).thenReturn(37.5012);
+    when(property.getLongitude()).thenReturn(127.0396);
+    when(property.getRating()).thenReturn(4);
+    when(property.getAddress()).thenReturn("서초구 서초동 789-12");
+    when(property.getPriceType()).thenReturn(PropertyType.JEONSE);
+    when(property.getDeposit()).thenReturn(280000000L);
+    when(property.getMonthlyRent()).thenReturn(0L);
+    when(property.getPrice()).thenReturn(0L);
+
+    PropertyImage thumbnailImage = createTestPropertyImage(1L);
+
+    given(h3Util.getH3IndicesForBounds(
+            request.northEastLat(), request.northEastLng(),
+            request.southWestLat(), request.southWestLng(), 9))
+            .willReturn(h3Indices);
+    given(propertyRepository.findByUserIdAndH3IndexInAndDeletedAtIsNull(userId, h3Indices))
+            .willReturn(List.of(property));
+    given(propertyImageRepository.findByPropertyIdInAndDisplayOrder(List.of(1L), 0))
+            .willReturn(List.of(thumbnailImage));
+
+    // When
+    MapMarkersResponse response = propertyMapService.getMapMarkers(request, userId);
+
+    // Then
+    assertThat(response.markers()).hasSize(1);
+    assertThat(response.markers().get(0).thumbnailUrl()).isEqualTo("thumbnail.jpg");
+  }
+
+  @Test
+  @DisplayName("지도 마커 조회 - H3 변환 실패 시 빈 마커 반환")
+  void getMapMarkers_H3ConversionFails() {
+    // Given
+    MapBoundsRequest request = new MapBoundsRequest(
+            37.5100, 127.0500, 37.4900, 127.0300, 15
+    );
+    Long userId = 1L;
+
+    given(h3Util.getH3IndicesForBounds(
+            request.northEastLat(), request.northEastLng(),
+            request.southWestLat(), request.southWestLng(), 9))
+            .willThrow(new RuntimeException("H3 변환 오류"));
+
+    // When
+    MapMarkersResponse response = propertyMapService.getMapMarkers(request, userId);
+
+    // Then — 예외 전파 없이 빈 목록 반환
+    assertThat(response.markers()).isEmpty();
+  }
+
+  @Test
   @DisplayName("매물 간략 정보 조회")
   void getPropertySummaryCard_Success_WithThumbnail() {
     // Given
