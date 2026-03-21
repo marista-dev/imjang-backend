@@ -1,5 +1,6 @@
 package com.imjang.global.config;
 
+import java.net.URI;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -10,10 +11,11 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 /**
- * AWS S3 설정
+ * Oracle Object Storage S3 호환 설정
  */
 @Configuration
 @RequiredArgsConstructor
@@ -31,6 +33,8 @@ public class S3Config {
     return S3Client.builder()
             .region(Region.of(s3Properties.getS3().getRegion()))
             .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
+            .endpointOverride(URI.create(s3Properties.getS3().getEndpoint()))
+            .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
             .build();
   }
 
@@ -44,6 +48,7 @@ public class S3Config {
     return S3Presigner.builder()
             .region(Region.of(s3Properties.getS3().getRegion()))
             .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
+            .endpointOverride(URI.create(s3Properties.getS3().getEndpoint()))
             .build();
   }
 
@@ -70,6 +75,8 @@ public class S3Config {
 
       private String bucket;
       private String region;
+      private String endpoint;
+      private String namespace;
       private String imagePrefix = "images/properties";
       private String thumbnailPrefix = "thumbnails/properties";
     }
