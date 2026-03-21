@@ -41,7 +41,7 @@ public class PropertyMapService {
               request.northEastLng(),
               request.southWestLat(),
               request.southWestLng(),
-              getH3Resolution(request.zoomLevel())
+              9  // 매물 저장 해상도와 동일하게 고정
       );
     } catch (Exception e) {
       log.warn("H3 변환 실패, 빈 마커 반환", e);
@@ -106,18 +106,4 @@ public class PropertyMapService {
     );
   }
 
-  /**
-   * 줌 레벨에 따른 H3 해상도 결정
-   */
-  private int getH3Resolution(Integer zoomLevel) {
-    if (zoomLevel >= 18) {
-      return 11;  // 매우 상세
-    } else if (zoomLevel >= 16) {
-      return 10;
-    } else if (zoomLevel >= 14) {
-      return 9;   // 기본값
-    } else {
-      return 8;    // 광역
-    }
-  }
 }
