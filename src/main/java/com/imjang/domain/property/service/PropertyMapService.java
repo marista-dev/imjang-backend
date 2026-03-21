@@ -12,7 +12,9 @@ import com.imjang.domain.property.repository.PropertyRepository;
 import com.imjang.global.exception.CustomException;
 import com.imjang.global.exception.ErrorCode;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,19 +34,45 @@ public class PropertyMapService {
    */
   @Transactional(readOnly = true)
   public MapMarkersResponse getMapMarkers(MapBoundsRequest request, Long userId) {
-    Set<String> h3Indices = h3Util.getH3IndicesForBounds(
-            request.northEastLat(),
-            request.northEastLng(),
-            request.southWestLat(),
-            request.southWestLng(),
-            getH3Resolution(request.zoomLevel())
-    );
+    Set<String> h3Indices;
+    try {
+      h3Indices = h3Util.getH3IndicesForBounds(
+              request.northEastLat(),
+              request.northEastLng(),
+              request.southWestLat(),
+              request.southWestLng(),
+              getH3Resolution(request.zoomLevel())
+      );
+    } catch (Exception e) {
+      log.warn("H3 변환 실패, 빈 마커 반환", e);
+      return new MapMarkersResponse(List.of());
+    }
 
-    List<Property> properties = propertyRepository.findByUserIdAndH3IndexInAndDeletedAtIsNull(userId, h3Indices);
+    if (h3Indices.isEmpty()) {
+      return new MapMarkersResponse(List.of());
+    }
+
+    List<Property> properties =
+        propertyRepository.findByUserIdAndH3IndexInAndDeletedAtIsNull(userId, h3Indices);
+
+    if (properties.isEmpty()) {
+      return new MapMarkersResponse(List.of());
+    }
+
+    List<Long> propertyIds = properties.stream().map(Property::getId).toList();
+
+    // N+1 방지: displayOrder=0 썸네일 IN절 일괄 조회
+    Map<Long, String> thumbnailMap = propertyImageRepository
+        .findByPropertyIdInAndDisplayOrder(propertyIds, 0)
+        .stream()
+        .collect(Collectors.toMap(
+            img -> img.getProperty().getId(),
+            PropertyImage::getThumbnailUrl
+        ));
 
     List<PropertyMarkerResponse> markers = properties.stream()
-            .map(PropertyMarkerResponse::from)
-            .toList();
+        .map(p -> PropertyMarkerResponse.from(p, thumbnailMap.get(p.getId())))
+        .toList();
 
     return new MapMarkersResponse(markers);
   }
