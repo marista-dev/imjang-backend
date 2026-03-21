@@ -37,7 +37,7 @@ import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationEventPublisher;
+import com.imjang.global.common.event.DomainEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -53,7 +53,7 @@ public class PropertyService {
   private final PropertyImageRepository propertyImageRepository;
   private final TempImageRepository tempImageRepository;
   private final UserRepository userRepository;
-  private final ApplicationEventPublisher eventPublisher;
+  private final DomainEventPublisher domainEventPublisher;
   private final LocationCacheRepository locationCacheRepository;
   private final H3Util h3Util;
 
@@ -133,7 +133,7 @@ public class PropertyService {
     List<Long> imageIds = savedImages.stream()
             .map(PropertyImage::getId)
             .toList();
-    eventPublisher.publishEvent(new PropertyCreatedEvent(property.getId(), imageIds));
+    domainEventPublisher.publishAfterCommit(new PropertyCreatedEvent(property.getId(), imageIds));
   }
 
   /**
@@ -186,7 +186,7 @@ public class PropertyService {
             .map(PropertyImage::getId)
             .toList();
 
-    eventPublisher.publishEvent(new PropertyCreatedEvent(propertyId, imageIds));
+    domainEventPublisher.publishAfterCommit(new PropertyCreatedEvent(propertyId, imageIds));
 
     log.info("매물 이미지 추가 완료: propertyId={}, addedCount={}", propertyId, imageIds.size());
 

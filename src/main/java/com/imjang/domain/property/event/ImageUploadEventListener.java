@@ -12,11 +12,10 @@ import java.io.File;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * 이미지 업로드 이벤트 리스너
@@ -35,7 +34,7 @@ public class ImageUploadEventListener {
    * 트랜잭션 커밋 후 실행되어 PropertyImage가 DB에 확실히 존재함을 보장.
    */
   @Async("imageUploadExecutor")
-  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  @EventListener
   @Transactional
   public void handlePropertyCreated(PropertyCreatedEvent event) {
     log.info("⬆이미지 S3 업로드 시작: propertyId={}", event.propertyId());
