@@ -323,7 +323,6 @@ gradle-app.setting
 # Spring Boot 관련
 application-local.yml
 application-local.properties
-application-prod.yml
 application-prod.properties
 application-dev.yml
 application-dev.properties
@@ -387,3 +386,4 @@ gradle-app.setting
 
 # End of https://www.toptal.com/developers/gitignore/api/gradle
 
+*.md

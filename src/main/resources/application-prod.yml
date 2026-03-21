@@ -1,0 +1,55 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/imjang_db
+    username: ${DB_USER:imjang_user}
+    password: ${DB_PASSWORD:imjang_password_2024}
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 10
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+      generate_statistics: false
+
+# EC2 Production 환경 설정
+app:
+  upload:
+    path: /app/uploads
+    max-size: 10485760  # 10MB
+  cleanup:
+    retention-days: 90
+    batch-size: 50
+    enabled: true
+
+
+# 로깅 레벨 조정
+logging:
+  level:
+    root: INFO
+    com.imjang: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+  file:
+    name: /app/logs/imjang-api.log
+  logback:
+    rollingpolicy:
+      file-name-pattern: /app/logs/imjang-api-%d{yyyy-MM-dd}.%i.log
+      max-file-size: 10MB
+      max-history: 7
+
+# 서버 설정
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false  # HTTPS 설정 전까지는 false
+
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
