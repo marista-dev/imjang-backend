@@ -58,11 +58,16 @@ class PropertyMapServiceTest {
     Long userId = 1L;
     Set<String> h3Indices = Set.of("891f0d92b93ffff");
 
-    Property property = mock(Property.class);
+    Property property = mock(Property.class, withSettings().lenient());
     when(property.getId()).thenReturn(1L);
     when(property.getLatitude()).thenReturn(37.5012);
     when(property.getLongitude()).thenReturn(127.0396);
     when(property.getRating()).thenReturn(4);
+    when(property.getAddress()).thenReturn("서초구 서초동 789-12");
+    when(property.getPriceType()).thenReturn(PropertyType.JEONSE);
+    when(property.getDeposit()).thenReturn(280000000L);
+    when(property.getMonthlyRent()).thenReturn(0L);
+    when(property.getPrice()).thenReturn(0L);
 
     List<Property> properties = List.of(property);
 
@@ -74,6 +79,9 @@ class PropertyMapServiceTest {
     given(propertyRepository.findByUserIdAndH3IndexInAndDeletedAtIsNull(userId, h3Indices))
             .willReturn(properties);
 
+    given(propertyImageRepository.findByPropertyIdInAndDisplayOrder(List.of(1L), 0))
+            .willReturn(List.of());
+
     // When
     MapMarkersResponse response = propertyMapService.getMapMarkers(request, userId);
 
@@ -82,6 +90,8 @@ class PropertyMapServiceTest {
     assertThat(response.markers().get(0).id()).isEqualTo(1L);
     assertThat(response.markers().get(0).latitude()).isEqualTo(37.5012);
     assertThat(response.markers().get(0).longitude()).isEqualTo(127.0396);
+    assertThat(response.markers().get(0).address()).isEqualTo("서초구 서초동 789-12");
+    assertThat(response.markers().get(0).priceType()).isEqualTo("JEONSE");
 
     verify(h3Util).getH3IndicesForBounds(
             request.northEastLat(), request.northEastLng(),
