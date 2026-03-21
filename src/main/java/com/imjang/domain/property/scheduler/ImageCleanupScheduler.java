@@ -6,12 +6,12 @@ import com.imjang.domain.property.entity.TempImage;
 import com.imjang.domain.property.event.PropertyCreatedEvent;
 import com.imjang.domain.property.repository.PropertyImageRepository;
 import com.imjang.domain.property.repository.TempImageRepository;
+import com.imjang.global.common.event.DomainEventPublisher;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -27,7 +27,7 @@ public class ImageCleanupScheduler {
 
   private final TempImageRepository tempImageRepository;
   private final PropertyImageRepository propertyImageRepository;
-  private final ApplicationEventPublisher eventPublisher;
+  private final DomainEventPublisher domainEventPublisher;
 
   /**
    * 매시간 실행: S3 업로드 완료된 로컬 임시 파일 삭제
@@ -95,7 +95,7 @@ public class ImageCleanupScheduler {
 
     for (PropertyImage image : failedImages) {
       try {
-        eventPublisher.publishEvent(new PropertyCreatedEvent(
+        domainEventPublisher.publishAfterCommit(new PropertyCreatedEvent(
                 image.getProperty().getId(),
                 List.of(image.getId())
         ));
