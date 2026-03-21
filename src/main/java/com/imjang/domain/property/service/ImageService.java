@@ -111,7 +111,7 @@ public class ImageService {
 
       // 웹 접근 가능한 URL 생성
       LocalDate now = LocalDate.now();
-      String webAccessibleUrl = String.format("/images/user%d/%d/%02d/%s",
+      String webAccessibleUrl = String.format("/temp-images/user%d/%d/%02d/%s",
               userId, now.getYear(), now.getMonthValue(), thumbnailFileName);
 
       return ImageUploadResponse.of(tempImage.getId(), webAccessibleUrl);
