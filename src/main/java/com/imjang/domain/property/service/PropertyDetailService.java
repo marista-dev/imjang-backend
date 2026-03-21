@@ -163,18 +163,16 @@ public class PropertyDetailService {
             request.memo()
     );
 
-    Property updatedProperty = propertyRepository.save(property);
-
     return new UpdatePropertyDetailResponse(
-            updatedProperty.getId(),
-            updatedProperty.isMoveInAvailable(),
-            updatedProperty.isRevisitIntention(),
-            updatedProperty.getPriceEvaluation(),
-            updatedProperty.getParkingType(),
-            updatedProperty.getMaintenanceFee(),
-            updatedProperty.getEnvironments(),
-            updatedProperty.getMemo(),
-            updatedProperty.getUpdatedAt()
+            property.getId(),
+            property.isMoveInAvailable(),
+            property.isRevisitIntention(),
+            property.getPriceEvaluation(),
+            property.getParkingType(),
+            property.getMaintenanceFee(),
+            property.getEnvironments(),
+            property.getMemo(),
+            property.getUpdatedAt()
     );
   }
 }

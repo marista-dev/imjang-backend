@@ -42,6 +42,15 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/imjang-backend:latest
 
+      - name: Copy docker-compose.yml to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ubuntu
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          source: "docker-compose.yml"
+          target: "~/imjang/"
+
       - name: Deploy to Oracle Cloud
         uses: appleboy/ssh-action@v1.0.3
         with:

@@ -40,18 +40,20 @@ public class ImageCleanupScheduler {
     List<PropertyImage> completedImages = propertyImageRepository.findByStatusAndUpdatedAtBefore(
             ImageStatus.COMPLETED, oneHourAgo, PageRequest.of(0, 100));
 
-    for (PropertyImage image : completedImages) {
-      try {
-        if (image.getTempImageId() != null) {
-          tempImageRepository.findById(image.getTempImageId())
-                  .ifPresent(tempImage -> {
-                    deleteLocalFile(tempImage.getOriginalUrl());
-                    deleteLocalFile(tempImage.getThumbnailUrl());
-                  });
+    List<Long> tempImageIds = completedImages.stream()
+            .map(PropertyImage::getTempImageId)
+            .filter(id -> id != null)
+            .toList();
+
+    if (!tempImageIds.isEmpty()) {
+      tempImageRepository.findAllById(tempImageIds).forEach(tempImage -> {
+        try {
+          deleteLocalFile(tempImage.getOriginalUrl());
+          deleteLocalFile(tempImage.getThumbnailUrl());
+        } catch (Exception e) {
+          log.error("로컬 파일 삭제 실패: tempImageId={}", tempImage.getId(), e);
         }
-      } catch (Exception e) {
-        log.error("로컬 파일 삭제 실패: imageId={}", image.getId(), e);
-      }
+      });
     }
     log.info("S3 업로드 완료된 로컬 파일 {} 개 처리 완료", completedImages.size());
   }
