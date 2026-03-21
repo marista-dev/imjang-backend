@@ -53,3 +53,21 @@ springdoc:
     enabled: false
   api-docs:
     enabled: false
+
+# Oracle Object Storage 설정
+cloud:
+  aws:
+    credentials:
+      access-key: ${OCI_ACCESS_KEY}
+      secret-key: ${OCI_SECRET_KEY}
+    s3:
+      bucket: ${OCI_BUCKET:imjang-images}
+      region: ${OCI_REGION:ap-chuncheon-1}
+      endpoint: ${OCI_ENDPOINT}
+      namespace: ${OCI_NAMESPACE}
+      image-prefix: images/properties
+      thumbnail-prefix: thumbnails/properties
+    region:
+      static: ${OCI_REGION:ap-chuncheon-1}
+    stack:
+      auto: false
