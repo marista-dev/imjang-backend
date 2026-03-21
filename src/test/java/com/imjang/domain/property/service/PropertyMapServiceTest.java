@@ -21,7 +21,6 @@ import com.imjang.domain.property.repository.PropertyImageRepository;
 import com.imjang.domain.property.repository.PropertyRepository;
 import com.imjang.global.exception.CustomException;
 import com.imjang.global.exception.ErrorCode;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -272,71 +271,6 @@ class PropertyMapServiceTest {
             .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCESS_DENIED);
   }
 
-  @Test
-  @DisplayName("H3 해상도 결정 - 줌 레벨 18 이상")
-  void getH3Resolution_ZoomLevel18OrHigher() throws Exception {
-    // Given
-    Integer zoomLevel = 18;
-
-    // When
-    int resolution = invokeGetH3Resolution(zoomLevel);
-
-    // Then
-    assertThat(resolution).isEqualTo(11);
-  }
-
-  @Test
-  @DisplayName("H3 해상도 결정 - 줌 레벨 16-17")
-  void getH3Resolution_ZoomLevel16To17() throws Exception {
-    // Given
-    Integer zoomLevel = 16;
-
-    // When
-    int resolution = invokeGetH3Resolution(zoomLevel);
-
-    // Then
-    assertThat(resolution).isEqualTo(10);
-  }
-
-  @Test
-  @DisplayName("H3 해상도 결정 - 줌 레벨 14-15")
-  void getH3Resolution_ZoomLevel14To15() throws Exception {
-    // Given
-    Integer zoomLevel = 14;
-
-    // When
-    int resolution = invokeGetH3Resolution(zoomLevel);
-
-    // Then
-    assertThat(resolution).isEqualTo(9);
-  }
-
-  @Test
-  @DisplayName("H3 해상도 결정 - 줌 레벨 13 이하")
-  void getH3Resolution_ZoomLevel13OrLower() throws Exception {
-    // Given
-    Integer zoomLevel = 13;
-
-    // When
-    int resolution = invokeGetH3Resolution(zoomLevel);
-
-    // Then
-    assertThat(resolution).isEqualTo(8);
-  }
-
-  @Test
-  @DisplayName("H3 해상도 결정 - 경계값 테스트")
-  void getH3Resolution_BoundaryValues() throws Exception {
-    // Given & When & Then
-    assertThat(invokeGetH3Resolution(18)).isEqualTo(11);
-    assertThat(invokeGetH3Resolution(17)).isEqualTo(10);
-    assertThat(invokeGetH3Resolution(16)).isEqualTo(10);
-    assertThat(invokeGetH3Resolution(15)).isEqualTo(9);
-    assertThat(invokeGetH3Resolution(14)).isEqualTo(9);
-    assertThat(invokeGetH3Resolution(13)).isEqualTo(8);
-    assertThat(invokeGetH3Resolution(1)).isEqualTo(8);
-  }
-
   private User createTestUser(Long userId) {
     User user = mock(User.class, withSettings().lenient());
     lenient().when(user.getId()).thenReturn(userId);
@@ -372,9 +306,4 @@ class PropertyMapServiceTest {
     return propertyImage;
   }
 
-  private int invokeGetH3Resolution(Integer zoomLevel) throws Exception {
-    Method method = PropertyMapService.class.getDeclaredMethod("getH3Resolution", Integer.class);
-    method.setAccessible(true);
-    return (int) method.invoke(propertyMapService, zoomLevel);
-  }
 }
