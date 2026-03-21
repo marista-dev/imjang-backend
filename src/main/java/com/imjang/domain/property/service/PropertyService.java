@@ -43,6 +43,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Slf4j
 @Service
@@ -133,7 +135,7 @@ public class PropertyService {
     List<Long> imageIds = savedImages.stream()
             .map(PropertyImage::getId)
             .toList();
-    eventPublisher.publishEvent(new PropertyCreatedEvent(property.getId(), imageIds));
+    publishAfterCommit(new PropertyCreatedEvent(property.getId(), imageIds));
   }
 
   /**
@@ -186,7 +188,7 @@ public class PropertyService {
             .map(PropertyImage::getId)
             .toList();
 
-    eventPublisher.publishEvent(new PropertyCreatedEvent(propertyId, imageIds));
+    publishAfterCommit(new PropertyCreatedEvent(propertyId, imageIds));
 
     log.info("매물 이미지 추가 완료: propertyId={}, addedCount={}", propertyId, imageIds.size());
 
@@ -331,6 +333,20 @@ public class PropertyService {
             .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND));
 
     propertyImage.updateStatus(ImageStatus.DELETED);
+  }
+
+  /**
+   * 트랜잭션 커밋 후 이벤트 발행.
+   * Spring 6에서 @Async + @TransactionalEventListener 조합이 금지되므로
+   * 서비스 레이어에서 커밋 후 발행을 보장한다.
+   */
+  private void publishAfterCommit(Object event) {
+    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+      @Override
+      public void afterCommit() {
+        eventPublisher.publishEvent(event);
+      }
+    });
   }
 
   /**
