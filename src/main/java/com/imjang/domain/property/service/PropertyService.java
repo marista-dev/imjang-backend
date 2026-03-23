@@ -217,7 +217,9 @@ public class PropertyService {
     Map<Long, String> thumbnailMap = thumbnails.stream()
             .collect(Collectors.toMap(
                     img -> img.getProperty().getId(),
-                    PropertyImage::getThumbnailUrl
+                    img -> img.getStatus() == ImageStatus.COMPLETED
+                            ? img.getImageUrl()
+                            : img.getThumbnailUrl()
             ));
 
     List<PropertySummaryResponse> propertySummaries = properties.stream()
