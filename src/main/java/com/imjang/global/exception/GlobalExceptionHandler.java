@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
@@ -155,6 +156,25 @@ public class GlobalExceptionHandler {
           NoHandlerFoundException e, HttpServletRequest request) {
 
     log.error("No handler found: {}", e.getMessage());
+
+    ErrorResponse response = ErrorResponse.of(
+            ErrorCode.ENTITY_NOT_FOUND,
+            "요청한 리소스를 찾을 수 없습니다",
+            request.getRequestURI()
+    );
+
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+  }
+
+  /**
+   * Static resource not found (봇/스캐너 탐색 요청)
+   * ERROR 아닌 WARN으로 처리 - 실제 서비스 오류가 아닌 노이즈
+   */
+  @ExceptionHandler(NoResourceFoundException.class)
+  protected ResponseEntity<ErrorResponse> handleNoResourceFoundException(
+          NoResourceFoundException e, HttpServletRequest request) {
+
+    log.warn("No resource found: {} {}", request.getMethod(), request.getRequestURI());
 
     ErrorResponse response = ErrorResponse.of(
             ErrorCode.ENTITY_NOT_FOUND,
